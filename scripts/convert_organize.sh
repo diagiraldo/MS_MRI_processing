@@ -3,7 +3,7 @@
 # convert from DICOM to nifti 
 # Save in folder following BIDS
 # Diana Giraldo, Nov 2022
-# It requires: 'dcminfo' from mrtrix3, 'dcm2niix' from MRIcroGL
+# It requires: 'dcminfo' and 'mrconvert' from mrtrix3, 'dcm2niix' from MRIcroGL
 
 ############################################
 # Inputs: 
@@ -48,7 +48,10 @@ if [[ -f ${OUT_IM} ]]; then
     OUT_IM=${OUT_DIR}/${OUT_NAME}.nii.gz
 fi
 
-${D2N_DIR}/dcm2niix -z y -v 0 -o ${OUT_DIR} -f ${OUT_NAME} ${IN_DCM}
+# Convert from DICOM to nifti
+mrconvert ${IN_DCM} ${OUT_DIR}/${OUT_NAME}.nii.gz -config RealignTransform false 
+# Export info from DICOM to .txt (to .json?)
+dcminfo ${IN_DCM}/${EX1_DCM} -tag 0008 0012 -tag 0008 0060 -tag 0018 0087 -tag 0018 0084 -tag 0008 0070 -tag 0008 1090 -tag 0008 1010 -tag 0018 0015 -tag 0018 5100 -tag 0018 1020 -tag 0018 0023 -tag 0008 103E -tag 0018 1030 -tag 0018 0020 -tag 0018 0021 -tag 0018 0022 -tag 0008 0032 -tag 0020 0011 -tag 0020 0012 -tag 0018 0050 -tag 0018 0088 -tag 0018 1316 -tag 0018 0080 -tag 0018 0081 -tag 0018 0082 -tag 0018 1314 -tag 0018 1250 -tag 0018 1251 -tag 0018 0089 -tag 0018 0091 -tag 0018 0093 -tag 0018 0094 -tag 0018 0095 -tag 0018 1310 -tag 0018 1312 -tag 0028 0030 -tag 0028 0010 -tag 0028 0011 -tag 2001 100B -tag 0020 0037 > ${OUT_DIR}/${OUT_NAME}.txt
 
 ############################################
 # Output:
