@@ -13,6 +13,10 @@ IN_DCM=${1}
 MRI_DIR=${2}
 ############################################
 
+# Config mrtrix
+mv ~/.mrtrix.conf ~/.prevmrtrix.conf
+echo 'RealignTransform: 0' >> ~/.mrtrix.conf
+
 # Subject ID based on known folder structure
 SUB_ID=$(basename $(dirname $(dirname ${IN_DCM})))
 # Select first DICOM in folder to extract acquisition info
@@ -49,9 +53,11 @@ if [[ -f ${OUT_IM} ]]; then
 fi
 
 # Convert from DICOM to nifti
-mrconvert ${IN_DCM} ${OUT_DIR}/${OUT_NAME}.nii.gz -config RealignTransform false 
+mrconvert ${IN_DCM} ${OUT_DIR}/${OUT_NAME}.nii.gz
 # Export info from DICOM to .txt (to .json?)
 dcminfo ${IN_DCM}/${EX1_DCM} -tag 0008 0012 -tag 0008 0060 -tag 0018 0087 -tag 0018 0084 -tag 0008 0070 -tag 0008 1090 -tag 0008 1010 -tag 0018 0015 -tag 0018 5100 -tag 0018 1020 -tag 0018 0023 -tag 0008 103E -tag 0018 1030 -tag 0018 0020 -tag 0018 0021 -tag 0018 0022 -tag 0008 0032 -tag 0020 0011 -tag 0020 0012 -tag 0018 0050 -tag 0018 0088 -tag 0018 1316 -tag 0018 0080 -tag 0018 0081 -tag 0018 0082 -tag 0018 1314 -tag 0018 1250 -tag 0018 1251 -tag 0018 0089 -tag 0018 0091 -tag 0018 0093 -tag 0018 0094 -tag 0018 0095 -tag 0018 1310 -tag 0018 1312 -tag 0028 0030 -tag 0028 0010 -tag 0028 0011 -tag 2001 100B -tag 0020 0037 > ${OUT_DIR}/${OUT_NAME}.txt
+
+mv ~/.prevmrtrix.conf ~/.mrtrix.conf
 
 ############################################
 # Output:

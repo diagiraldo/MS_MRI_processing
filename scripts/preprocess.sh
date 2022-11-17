@@ -3,7 +3,7 @@
 # Preprocess nifti images: denoise, N4, brain extraction 
 # Results are saver in folder of processed data
 # Diana Giraldo, Nov 2022
-# It requires: ANTs, anatomical template and mask 
+# It requires: ANTs
 
 ############################################
 # Inputs: 
