@@ -25,7 +25,7 @@ EX1_DCM=$(ls ${IN_DCM} | head -n 1)
 IM_DATE=$(dcminfo ${IN_DCM}/${EX1_DCM} -tag 0008 0012 | head -n 1 | awk '{print $2}' | sed 's/\///g')
 # Extract Series Description and define (data)image type 
 IM_DESCR=$(dcminfo ${IN_DCM}/${EX1_DCM} -tag 0008 103E | head -n 1 | sed 's/[^ ]* //' | sed 's/ //g')
-if $(echo ${IM_DESCR} | grep -q -E "T2|T1|FLAIR"); then
+if $(echo ${IM_DESCR} | grep -q -E "T2|T1|[Ff][Ll][Aa][Ii][Rr]"); then
     IM_TYPE=anat
 fi
 if $(echo ${IM_DESCR} | grep -q -E "DWI"); then
