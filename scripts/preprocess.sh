@@ -3,7 +3,7 @@
 # Preprocess nifti images: denoise, N4, brain extraction 
 # Results are saver in folder of processed data
 # Diana Giraldo, Nov 2022
-# It requires: ANTs
+# It requires: ANTs, HD-BET
 
 ############################################
 # Inputs: 
@@ -31,20 +31,13 @@ mkdir -p ${OUT_DIR}
 # Denoise
 DenoiseImage -d 3 -n Rician -i ${RAW_IM} -o ${OUT_DIR}/${IM_BN}_dn.nii.gz
 
-# # Brain Extraction (for anatomical images) to improve biasfield correction
-# if $(echo ${IM_BN} | grep -q -E "FLAIR"); then
-#     TCLASS="3x1x3x2"
-# fi
-# if $(echo ${IM_BN} | grep -q -E "T1"); then
-#     TCLASS="3x1x2x3"
-# fi
-# antsBrainExtraction.sh -d 3 -a ${OUT_DIR}/${IM_BN}_dn.nii.gz -c ${TCLASS} -e ${ANATTEMP} -m ${ANATMASK} -o ${OUT_DIR}/${IM_BN}_ > /dev/null
-# mv ${OUT_DIR}/${IM_BN}_BrainExtractionMask.nii.gz ${OUT_DIR}/${IM_BN}_mask.nii.gz
-# rm ${OUT_DIR}/${IM_BN}_BrainExtraction*
-# N4BiasFieldCorrection -d 3 -i ${OUT_DIR}/${IM_BN}_dn.nii.gz -o ${OUT_DIR}/${IM_BN}_preproc.nii.gz -x ${OUT_DIR}/${IM_BN}_mask.nii.gz
+# Brain Extraction
+hd-bet -i ${OUT_DIR}/${IM_BN}_dn.nii.gz -o ${OUT_DIR}/${IM_BN}_bet.nii.gz -device cpu -mode fast -tta 0
+rm ${OUT_DIR}/${IM_BN}_bet.nii.gz
+mv ${OUT_DIR}/${IM_BN}_bet_mask.nii.gz ${OUT_DIR}/${IM_BN}_brainmask.nii.gz
 
 # Biasfield correction N4
-N4BiasFieldCorrection -d 3 -i ${OUT_DIR}/${IM_BN}_dn.nii.gz -o \[${OUT_DIR}/${IM_BN}_preproc.nii.gz,${OUT_DIR}/${IM_BN}_biasField.nii.gz\]
+N4BiasFieldCorrection -d 3 -i ${OUT_DIR}/${IM_BN}_dn.nii.gz -o \[${OUT_DIR}/${IM_BN}_preproc.nii.gz,${OUT_DIR}/${IM_BN}_biasField.nii.gz\] -x ${OUT_DIR}/${IM_BN}_brainmask.nii.gz
 
 # Remove denoised image
 rm ${OUT_DIR}/${IM_BN}_dn.nii.gz

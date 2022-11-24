@@ -71,3 +71,12 @@ fi
 TMP_OUT=${TMP_DIR}/output.mif
 HR_INIT=${TMP_DIR}/${INIT_NAME}.mif
 matlab -nodisplay -r "cd('$mSRR_DIR'); SRR_QuintenB_motion_v2('$BB_DIR', '$mifs_DIR', '$TMP_OUT', '$HR_INIT', '$SLW', '$LAMBDA'); exit"
+
+# Convert output
+mrconvert ${TMP_OUT} ${OUT_IM_NAME}
+echo "- Output in ${OUT_IM_NAME}"
+
+# restore mrtrix configuration file
+mv ${TMP_DIR}/.prevmrtrix.conf ~/.mrtrix.conf 
+
+rm -r ${TMP_DIR}
