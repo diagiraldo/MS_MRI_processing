@@ -37,7 +37,7 @@ rm ${OUT_DIR}/${IM_BN}_bet.nii.gz
 mv ${OUT_DIR}/${IM_BN}_bet_mask.nii.gz ${OUT_DIR}/${IM_BN}_brainmask.nii.gz
 
 # Biasfield correction N4
-N4BiasFieldCorrection -d 3 -i ${OUT_DIR}/${IM_BN}_dn.nii.gz -o \[${OUT_DIR}/${IM_BN}_preproc.nii.gz,${OUT_DIR}/${IM_BN}_biasField.nii.gz\] -x ${OUT_DIR}/${IM_BN}_brainmask.nii.gz
+N4BiasFieldCorrection -d 3 -i ${OUT_DIR}/${IM_BN}_dn.nii.gz -o ${OUT_DIR}/${IM_BN}_preproc.nii.gz -x ${OUT_DIR}/${IM_BN}_brainmask.nii.gz
 
 # Remove denoised image
 rm ${OUT_DIR}/${IM_BN}_dn.nii.gz

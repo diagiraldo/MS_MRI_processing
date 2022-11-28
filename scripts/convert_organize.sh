@@ -3,7 +3,7 @@
 # convert from DICOM to nifti 
 # Save in folder following BIDS
 # Diana Giraldo, Nov 2022
-# It requires: 'dcminfo' and 'mrconvert' from mrtrix3, 'dcm2niix' from MRIcroGL
+# It requires: 'dcminfo' and 'mrconvert' from mrtrix3
 
 ############################################
 # Inputs: 
@@ -46,11 +46,13 @@ OUT_NAME=sub-${SUB_ID}_ses-${IM_DATE}_${IM_SUFF}
 OUT_IM=${OUT_DIR}/${OUT_NAME}.nii.gz
 
 # Check if image already exists -> add rep1 to suffix
-if [[ -f ${OUT_IM} ]]; then
-    IM_SUFF=${IMSUFF}rep1
-    OUT_NAME=sub-${SUB_ID}_ses-${IM_DATE}_${IM_SUFF}
+repidx=1
+while [[ -f ${OUT_IM} ]]; 
+do
+    OUT_NAME=sub-${SUB_ID}_ses-${IM_DATE}_${IM_SUFF}_rep${repidx}
     OUT_IM=${OUT_DIR}/${OUT_NAME}.nii.gz
-fi
+    repidx=$(( $repidx + 1 ))
+done
 
 # Convert from DICOM to nifti
 mrconvert ${IN_DCM} ${OUT_DIR}/${OUT_NAME}.nii.gz

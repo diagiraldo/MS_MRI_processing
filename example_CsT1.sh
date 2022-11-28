@@ -76,4 +76,5 @@ FLAIR_IM=$(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*Flair_fast*_preproc.nii* 
 OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg
 mkdir -p ${OUT_DIR}
 run_samseg --input ${T1_IM} ${FLAIR_IM} --pallidum-separate --lesion --lesion-mask-pattern 0 1 --output ${OUT_DIR} --threads 8
+rm ${OUT_DIR}/mode*_bias_*.mgz ${OUT_DIR}/template_coregistered.mgz
 
