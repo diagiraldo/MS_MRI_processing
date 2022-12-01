@@ -8,8 +8,10 @@
 # Inputs: 
 # Folder with preprocessed images 
 IN_DIR=${1}
+# Folder with masks
+INMSK_DIR=${2}
 # Output folder to save intensity normalized images
-OUT_DIR=${2}
+OUT_DIR=${3}
 ############################################
 
 
@@ -26,18 +28,14 @@ MASK_DIR=${TMP_DIR}/mask
 HMATCH_DIR=${TMP_DIR}/hmatch
 mkdir -p ${IMG_DIR} ${MASK_DIR} ${HMATCH_DIR}
 
-# Copy image to temporary directory
+# Copy images to temporary directory
 cp ${IN_DIR}/*.nii*  ${IMG_DIR}/.
-
-# Calculate brain masks
-echo "Calculating brain masks (FSL-bet) ..."
-for_each -quiet ${IMG_DIR}/* : bet IN ${MASK_DIR}/NAME -n -m
-for_each -quiet ${IMG_DIR}/* : maskfilter ${MASK_DIR}/PRE_mask.nii.gz clean ${MASK_DIR}/NAME -quiet
+cp ${INMSK_DIR}/*.nii* ${MASK_DIR}/.
 
 # Select transversal/axial as reference 
-IM_REF=$(ls ${IMG_DIR}/sub-*_ses-*_*TRA_*.nii* | head -n 1 )
+IM_REF=$(ls ${IMG_DIR}/sub-*_ses-*_*TRA_preproc.nii* | head -n 1 )
 FILENAME=${IM_REF##*/}
-MASK_REF=${MASK_DIR}/${FILENAME}
+MASK_REF=${MASK_DIR}/${${FILENAME}%_preproc.nii.gz}_brainmask.nii.gz
 
 # Move reference image to folder of matched images
 mv ${IM_REF} ${HMATCH_DIR}/.
@@ -48,7 +46,7 @@ echo "Scaling histograms ..."
 for IM in $( ls ${IMG_DIR}/*.nii* ); 
 do
  FILENAME=${IM##*/}
- MASK=${MASK_DIR}/${FILENAME}
+ MASK=${MASK_DIR}/${${FILENAME}%_preproc.nii.gz}_brainmask.nii.gz
  mrhistmatch scale ${IM} ${IM_REF} ${HMATCH_DIR}/${FILENAME} -mask_input ${MASK} -mask_target ${MASK_REF} -force -quiet
 done
 

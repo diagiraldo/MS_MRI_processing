@@ -9,15 +9,17 @@
 # Inputs: 
 # Folder with LR images, preprocessed with matched histograms
 IN_LR_DIR=${1}
+# Folder with masks
+IN_MSK_DIR=${2}
 # Image with template grid
-GRID_TEMP=${2}
+GRID_TEMP=${3}
 # Interpolation type
-OP_INTERP=${3}
+OP_INTERP=${4}
 # Number of iterations for rigid motion correction
-N_IT=${4}
+N_IT=${5}
 
 # Output (interpolated image) name
-OUT_IM_NAME=${5}
+OUT_IM_NAME=${6}
 ############################################
 
 # Make temporary directory
@@ -48,13 +50,14 @@ FOV_DIR=${TMP_DIR}/fovLR
 LRMASK_DIR=${TMP_DIR}/maskLR
 mkdir -p ${LR_DIR} ${FOV_DIR} ${LRMASK_DIR}
 
-# Copy image to temporary directory
-cp ${IN_LR_DIR}/*.nii* ${LR_DIR}/.
-
-# Calculafe fields of view and brain masks
-for_each -quiet ${LR_DIR}/* : mrcalc IN -isnan -not ${FOV_DIR}/NAME -quiet
-for_each -quiet ${LR_DIR}/* : bet IN ${LRMASK_DIR}/NAME -n -m
-for_each -quiet ${LR_DIR}/* : maskfilter ${LRMASK_DIR}/PRE_mask.nii.gz clean ${LRMASK_DIR}/NAME -quiet
+# Copy images to temporary directories and calculate fields of view
+for LRIM in $(ls ${IN_LR_DIR}/*.nii*);
+do
+    BASENAME=${${LRIM##*/}%_preproc.nii.gz}
+    cp ${LRIM} ${LR_DIR}/${BASENAME}.nii.gz
+    cp ${IN_MSK_DIR}/${BASENAME}_brainmask.nii.gz ${LRMASK_DIR}/${BASENAME}.nii.gz
+    mrcalc ${LRIM} -isnan -not ${FOV_DIR}/${BASENAME}.nii.gz -quiet
+done 
 
 #############################
 # Iterations
@@ -82,7 +85,7 @@ while [[ ${iter} -lt ${N_IT} ]]; do
         GRID_REF=${TMP_DIR}/${GRID_NAME}
     fi
     # Mask of reference image
-    bet ${REG_REF} ${TMP_DIR}/bet_interp.nii.gz -n -m
+    hd-bet -i ${REG_REF} -o ${TMP_DIR}/bet_interp.nii.gz -device cpu -mode fast -tta 0 > /dev/null
     REG_REF_MASK=${TMP_DIR}/bet_interp_mask.nii.gz
     # Perform rigid registration
     echo "---- Rigid registration ..."

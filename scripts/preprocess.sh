@@ -1,6 +1,6 @@
 #!/usr/bin/zsh
 
-# Preprocess nifti images: denoise, N4, brain extraction 
+# Preprocess nifti images: denoise, brain extraction, N4
 # Results are saver in folder of processed data
 # Diana Giraldo, Nov 2022
 # It requires: ANTs, HD-BET
@@ -32,7 +32,7 @@ mkdir -p ${OUT_DIR}
 DenoiseImage -d 3 -n Rician -i ${RAW_IM} -o ${OUT_DIR}/${IM_BN}_dn.nii.gz
 
 # Brain Extraction
-hd-bet -i ${OUT_DIR}/${IM_BN}_dn.nii.gz -o ${OUT_DIR}/${IM_BN}_bet.nii.gz -device cpu -mode fast -tta 0
+hd-bet -i ${OUT_DIR}/${IM_BN}_dn.nii.gz -o ${OUT_DIR}/${IM_BN}_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
 rm ${OUT_DIR}/${IM_BN}_bet.nii.gz
 mv ${OUT_DIR}/${IM_BN}_bet_mask.nii.gz ${OUT_DIR}/${IM_BN}_brainmask.nii.gz
 

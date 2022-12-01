@@ -15,59 +15,52 @@ mSRR_DIR=${SR_DIR}/ModelBasedSRR
 # Dependencies directory
 BB_DIR=${SR_DIR}/BuildingBlocks
 
-# DICOM dir
-DCM_DIR=/home/vlab/MS_proj/DCM_imgs
 # Raw MRI dir
 MRI_DIR=/home/vlab/MS_proj/MS_MRI
 # Processed MRI dir
 PRO_DIR=/home/vlab/MS_proj/processed_MRI
 
 CASE=0030403
-FOLDER=1
+DATE=20120507
 
-################################################################################
-#
-# Convert and pre-process anatomical images in folder: FLAIR and structural T1 
-#
-for IN_DCM in $(ls -d ${DCM_DIR}/${CASE}/${FOLDER}/*(sT1|[Ff][Ll][Aa][Ii][Rr])*/); 
+###################################################################################
+# Pre-process images: denoise, brain extraction, N4
+for RAW_IM in $(ls ${MRI_DIR}/sub-${CASE}/ses-${DATE}/anat/*(sT1|[Ff][Ll][Aa][Ii][Rr])*.nii*);
 do
-    # Convert and put in folder of raw MRI
-    RAW_IM=$(zsh ${SCR_DIR}/scripts/convert_organize.sh ${IN_DCM} ${MRI_DIR})
-    # Convert DICOM info to .json
-    BN=${RAW_IM%.nii.gz}
-    Rscript ${SCR_DIR}/scripts/dcminfo2json.R ${BN}.txt ${SCR_DIR}/data/dicomtags.csv ${BN}.json
-    # Pre-process image (Denoise and N4), save it in folder of processed data
     zsh ${SCR_DIR}/scripts/preprocess.sh ${RAW_IM} ${PRO_DIR} ${ANTS_DIR}
 done
-#
-################################################################################
-#
+
+###################################################################################
 # Use available LR FLAIR to obtain a HR image
-#
-DATE=$(ls ${PRO_DIR}/sub-${CASE} | head -n 1 | cut -d"-" -f2 )
-# Move LR FLAIR to folder
 slcth=2
+# Copy LR FLAIR (and masks) to subfolders
 FL_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_preproc
-mkdir -p ${FL_DIR}
+BM_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_masks
+mkdir -p ${FL_DIR} ${BM_DIR}
 for IM in $(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*[Ff][Ll][Aa][Ii][Rr]*preproc.nii.gz); 
 do
     SLC=$( mrinfo ${IM} -spacing | cut -d" " -f3 )
     if [[ ${SLC} > ${slcth} ]]; then
         cp ${IM} ${FL_DIR}/.
+        cp ${IM%_preproc.nii.gz}_brainmask.nii.gz ${BM_DIR}/.
     fi
 done
 # Histogram matching
 HM_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_hmatch
-zsh ${SCR_DIR}/scripts/histmatch_folder.sh ${FL_DIR} ${HM_DIR}
+zsh ${SCR_DIR}/scripts/histmatch_folder.sh ${FL_DIR} ${BM_DIR} ${HM_DIR}
 rm -r ${FL_DIR}
-# Grid Template
+# Grid template
 REF_IM=$(ls ${HM_DIR}/sub-*_ses-*_*TRA_*.nii* | head -n 1 )
 ISOVOX=$(mrinfo ${REF_IM} -spacing | awk '{print $1}' )
 HR_grid=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HRgrid_FLAIR.nii
-mrgrid ${REF_IM} regrid -vox ${ISOVOX} ${HR_grid} -interp nearest -force
+mrgrid ${REF_IM} regrid -vox ${ISOVOX} ${HR_grid} -interp nearest -force -quiet
 # Interpolation
 N_IT=4
 OP_INTERP=cubic
 HRFL_INT=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_interp.nii.gz
-zsh ${SCR_DIR}/scripts/mSR_interpolation.sh ${HM_DIR} ${HR_grid} ${OP_INTERP} ${N_IT} ${HRFL_INT}
+zsh ${SCR_DIR}/scripts/mSR_interpolation.sh ${HM_DIR} ${BM_DIR} ${HR_grid} ${OP_INTERP} ${N_IT} ${HRFL_INT}
+rm ${HR_grid}
 # Model-based SRR
+LAMBDA=0.05
+HRFL_SRR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRR.nii.gz
+zsh ${SCR_DIR}/scripts/model-based_SRR.sh ${HM_DIR} ${HRFL_INT} ${LAMBDA} ${mSRR_DIR} ${BB_DIR} ${HRFL_SRR}

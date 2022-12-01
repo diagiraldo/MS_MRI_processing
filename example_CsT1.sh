@@ -16,21 +16,10 @@ MRI_DIR=/home/vlab/MS_proj/MS_MRI
 PRO_DIR=/home/vlab/MS_proj/processed_MRI
 
 CASE=0229128
-FOLDER=5
-
-###################################################################################
-# Convert from DICOM to Nifti and put images in MRI dir for raw data
-for SEQ in sT1 Flair_fast; 
-do
-    IN_DCM=$(ls -d ${DCM_DIR}/${CASE}/${FOLDER}/*${SEQ}*/ | head -n 1 )
-    RAW_IM=$(zsh ${SCR_DIR}/scripts/convert_organize.sh ${IN_DCM} ${MRI_DIR})
-    BN=${RAW_IM%.nii.gz}
-    Rscript ${SCR_DIR}/scripts/dcminfo2json.R ${BN}.txt ${SCR_DIR}/data/dicomtags.csv ${BN}.json
-done
+DATE=20160818
 
 ###################################################################################
 # Pre-process images
-DATE=20160818
 for SEQ in sT1 Flair_fast; 
 do
     RAW_IM=$(ls ${MRI_DIR}/sub-${CASE}/ses-${DATE}/anat/*${SEQ}*.nii* | head -n 1 )
