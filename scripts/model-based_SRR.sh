@@ -68,8 +68,8 @@ else
     SLCTH=$( cat ${ex_JSON} | grep -Po '"Slice​Thickness":.*?[^\\]",' | cut -d" " -f2 | sed 's/\"//g' | sed 's/,//' )
     SLCSPA=$( cat ${ex_JSON} | grep -Po '"Spacing​Between​Slices":.*?[^\\]",' | cut -d" " -f2 | sed 's/\"//g' | sed 's/,//' )
     SLW=$( awk "BEGIN {print ${SLCTH}/${SLCSPA}}" )
-    # Correct initial estimation
-    mrcalc ${HR_INIT} ${SLW} -div ${HR_INIT} -quiet -force
+    # Scale LR according to SLW
+    for_each ${mifs_DIR}/*.mif : mrcalc IN ${SLW} -mult IN -quiet -force
 fi
 
 # Call MATLAB function
@@ -79,7 +79,7 @@ TMP_OUT=${TMP_DIR}/output_withmasks.mif
 matlab -nodisplay -r "cd('$mSRR_DIR'); SRR_QuintenB_motion_v2_withmasks('$BB_DIR', '$mifs_DIR', '$masks_DIR', '$TMP_OUT', '$HR_INIT', '$HR_MASK', '$SLW', '$LAMBDA'); exit"
 
 # Convert output
-mrconvert ${TMP_OUT} ${OUT_IM_NAME}
+mrconvert ${TMP_OUT} ${OUT_IM_NAME} -force -quiet
 mv ${TMP_DIR}/SRRrecon_info.mat $(dirname ${OUT_IM_NAME})/SRRrecon_info.mat
 echo "- Output in ${OUT_IM_NAME}"
 

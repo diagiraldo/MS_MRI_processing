@@ -51,9 +51,10 @@ zsh ${SCR_DIR}/scripts/histmatch_folder.sh ${FL_DIR} ${BM_DIR} ${HM_DIR}
 rm -r ${FL_DIR}
 # Grid template
 REF_IM=$(ls ${HM_DIR}/sub-*_ses-*_*TRA_*.nii* | head -n 1 )
-ISOVOX=$(mrinfo ${REF_IM} -spacing | awk '{print $1}' )
-HR_grid=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HRgrid_FLAIR.nii
-mrgrid ${REF_IM} regrid -vox ${ISOVOX} ${HR_grid} -interp nearest -force -quiet
+#ISOVOX=$(mrinfo ${REF_IM} -spacing | awk '{print $1}' )
+ISOVOX=1
+HR_grid=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HRgrid_FLAIR.nii.gz
+mrgrid ${REF_IM} pad -axis 2 1,1 - -quiet | mrgrid - regrid -vox ${ISOVOX} ${HR_grid} -interp nearest -force -quiet
 # Interpolation
 N_IT=4
 OP_INTERP=cubic
@@ -61,6 +62,6 @@ HRFL_INT=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_interp.nii.gz
 zsh ${SCR_DIR}/scripts/mSR_interpolation.sh ${HM_DIR} ${BM_DIR} ${HR_grid} ${OP_INTERP} ${N_IT} ${HRFL_INT}
 rm ${HR_grid}
 # Model-based SRR
-LAMBDA=0.05
+LAMBDA=0.1
 HRFL_SRR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRR.nii.gz
-zsh ${SCR_DIR}/scripts/model-based_SRR.sh ${HM_DIR} ${HRFL_INT} ${LAMBDA} ${mSRR_DIR} ${BB_DIR} ${HRFL_SRR}
+zsh ${SCR_DIR}/scripts/model-based_SRR.sh ${HM_DIR} ${BM_DIR} ${HRFL_INT} ${LAMBDA} ${mSRR_DIR} ${BB_DIR} ${HRFL_SRR}
