@@ -101,9 +101,30 @@ do
 
 done < ${SS_LIST}
 
-# Visual Check
-i=1
-CASE=$( cat ${SS_LIST} | head -n ${i} | tail -1 | awk '{print $1}')
-DATE=$( cat ${SS_LIST} | head -n ${i} | tail -1 | awk '{print $2}')
-FLAIR_IM=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRR.nii.gz
-mrview ${FLAIR_IM} -overlay.load ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg/seg.mgz -mode 2 -size 1600,900 -overlay.opacity 0.75 -overlay.colourmap 4 -overlay.intensity 0,100 -overlay.threshold_max 100 -overlay.interpolation 0
+# Run LST for lesion probabilistic segmentation
+# SPM directory (with LST toolbox)
+SPM_DIR=/home/vlab/spm12/
+# Directory with matlab functions for LST
+SEGF_DIR=${SCR_DIR}/scripts/LSTfunctions/
+thLST=0.1
+
+while IFS= read -r line;
+do
+    CASE=$(echo $line | awk '{print $1}')
+    DATE=$(echo $line | awk '{print $2}')
+    echo "-----------------------------------------"
+    echo "Subject: ${CASE}"
+    echo "Session date: ${DATE}"
+    
+    FLAIR_IM=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRR.nii.gz
+    OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST
+    mkdir -p ${OUT_DIR}
+    INNII=${OUT_DIR}/input.nii
+    mrconvert ${FLAIR_IM} ${INNII} -quiet -force
+    PLES=${OUT_DIR}/ples_lpa_minput.nii
+    matlab -nodisplay -r "addpath('$SPM_DIR'); addpath('$SEGF_DIR'); cd '$OUT_DIR'; lst_lpa('$INNII', 0); lst_lpa_voi('$PLES', '$thLST'); exit"
+    mrconvert ${PLES} ${OUT_DIR}/ples_lpa.nii.gz 
+    mv ${OUT_DIR}/LST_tlv_${thLST}_*.csv ${OUT_DIR}/LST_lpa_${thLST}.csv
+    rm ${OUT_DIR}/input.nii ${OUT_DIR}/minput.nii ${OUT_DIR}/LST_lpa_minput.mat ${PLES}
+
+done < ${SS_LIST}
