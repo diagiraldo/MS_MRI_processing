@@ -84,6 +84,9 @@ ph <- ggplot(DS, aes(Date, fill = Sess.FLAIR.ACQ, colour = Sess.FLAIR.ACQ)) +
 ggsave(filename = sprintf("%s/histogram_FLAIR_acq.png", dirname(MRIfile)),
        ph, width = 24, height = 12, units = "cm", dpi = 300, bg = "transparent")
 
+ggsave(filename = "/home/vlab/Dropbox/FLAIR_presentations/img/histogram_FLAIR_acq.png",
+       ph, width = 24, height = 10, units = "cm", dpi = 300, bg = "transparent")
+
 # tmpDS <- DS %>%
 #   arrange(t0) 
 # tmpDS$Subject <- factor(tmpDS$Subject, levels = unique(tmpDS$Subject))
