@@ -43,6 +43,7 @@ for (pp in c("CsT1", "C", "B", "A")) {
     }
   }
 }
+rm(tmpDS, i, pp, subcode, sesscode)
 
 # Organize SAMSEG estimation of volumes (in mm^3)
 DVOL <- left_join(select(DS, Subject, Session, Date:proc_pipe), DVOL) %>%
@@ -62,17 +63,12 @@ DVOL <- left_join(select(DS, Subject, Session, Date:proc_pipe), DVOL) %>%
 DVOL <- DVOL %>%
   mutate(proc_pipe = ifelse(!is.na(samseg.Intra.Cranial), proc_pipe, NA)) 
 
-######
-library(ggplot2)
+# Save info
+write.csv(DVOL, 
+          file = "/home/vlab/MS_proj/feature_tables/samseg_outputs.csv", 
+          row.names = FALSE)
 
-plt <- ggplot(filter(DVOL, !is.na(proc_pipe)), 
-              aes(x = Date, y = samseg.Intra.Cranial, colour = proc_pipe)) +
-  geom_point() +
-  geom_line(aes(group = Subject), colour = "gray80") +
-  theme_minimal() +
-  scale_x_date(breaks = seq(dmy("01-01-2011"), dmy("31-12-2017"), by = "12 months"), 
-               date_labels = "%b %Y")
-plt
+rm(DS, DVOL, PRO_DIR, SESfile)
 
 
 
