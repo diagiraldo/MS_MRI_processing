@@ -2,7 +2,7 @@
 
 # Intensity normalization across multiple images
 # Diana Giraldo, July 2022
-# It uses: 'mrhistmatch', 'for_each', and 'maskfilter' from mrtrix3, 'bet' from FSL 
+# It uses: 'mrhistmatch' from mrtrix3
 
 ############################################
 # Inputs: 

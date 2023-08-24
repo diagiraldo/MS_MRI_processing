@@ -3,7 +3,7 @@
 # Interpolation of multi-slice (orthogonal) low resolution images
 # with iterative rigid motion correction
 # Diana Giraldo, Sept 2022
-# It uses: 'mrtransform', 'mrregister', 'for_each', and 'maskfilter' from mrtrix3, 'bet' from FSL 
+# It uses: 'mrtransform', 'mrregister', 'for_each', and 'maskfilter' from mrtrix3, 'hd-bet' 
 
 ############################################
 # Inputs: 
@@ -26,7 +26,9 @@ OUT_IM_NAME=${6}
 TMP_DIR=$(mktemp -d)
 
 # Config mrtrix
-mv ~/.mrtrix.conf ${TMP_DIR}/.prevmrtrix.conf
+if [[ -e ~/.mrtrix.conf ]]; then
+    mv ~/.mrtrix.conf ${TMP_DIR}/.prevmrtrix.conf
+fi
 echo 'RealignTransform: 0' >> ~/.mrtrix.conf
 
 ###########################################
@@ -111,6 +113,9 @@ mrconvert ${TMP_DIR}/${INTER_NAME} ${OUT_IM_NAME} -force -quiet
 echo "- Output in ${OUT_IM_NAME}"
 
 # restore mrtrix configuration file
-mv ${TMP_DIR}/.prevmrtrix.conf ~/.mrtrix.conf 
+rm ~/.mrtrix.conf 
+if [[ -e ${TMP_DIR}/.prevmrtrix.conf ]]; then
+    mv ${TMP_DIR}/.prevmrtrix.conf ~/.mrtrix.conf 
+fi
 
 rm -r ${TMP_DIR}
