@@ -27,6 +27,7 @@ def main(args=None):
     parser.add_argument('--output', type=str, required=True)
     parser.add_argument('--ro-matrix', type=str)
     parser.add_argument('--realign-grid', action='store_true', default=False)
+    parser.add_argument('--verbose', action='store_true', default=False)
     
     args = parser.parse_args(args if args is not None else sys.argv[1:])
     
@@ -39,12 +40,14 @@ def main(args=None):
     # Get input image orientation
     IM = nib.load(args.input)
     im_ori = nib.orientations.io_orientation(IM.affine)
-    print('Image orientation:', nib.aff2axcodes(IM.affine))
+    if args.verbose:
+        print('Image orientation:', nib.aff2axcodes(IM.affine))
 
     # Get reference orientation
     REF = nib.load(args.reference)
     ref_ori = nib.orientations.io_orientation(REF.affine)
-    print('Reference orientation:', nib.aff2axcodes(REF.affine))
+    if args.verbose:
+        print('Reference orientation:', nib.aff2axcodes(REF.affine))
     
     # Orientation transform from reference to input
     or_ref2in = nib.orientations.ornt_transform(ref_ori, im_ori)
@@ -67,7 +70,8 @@ def main(args=None):
 
         tmprefvox = np.dot(np.linalg.inv(np.abs(aff_in2ref[:3,:3])), refvox)
         extra_shift = 0
-        print('Extra shift:', extra_shift)
+        if args.verbose:
+            print('Extra shift:', extra_shift)
         shift = T_im[:3,3] + extra_shift
         new_T = np.block([[np.eye(3), shift.reshape(-1,1)],
                       [np.zeros((1, 3)), 1.]]).astype(np.float32)

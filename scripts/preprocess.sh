@@ -30,6 +30,9 @@ mkdir -p ${OUT_DIR}
 
 # Denoise
 DenoiseImage -d 3 -n Rician -i ${RAW_IM} -o ${OUT_DIR}/${IM_BN}_dn.nii.gz
+# Calculate absolute value to remove negatives
+ImageMath 3 ${OUT_DIR}/${IM_BN}_dnabs.nii.gz abs ${OUT_DIR}/${IM_BN}_dn.nii.gz
+mv ${OUT_DIR}/${IM_BN}_dnabs.nii.gz ${OUT_DIR}/${IM_BN}_dn.nii.gz
 
 # Brain Extraction
 hd-bet -i ${OUT_DIR}/${IM_BN}_dn.nii.gz -o ${OUT_DIR}/${IM_BN}_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null

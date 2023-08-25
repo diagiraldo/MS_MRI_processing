@@ -103,7 +103,7 @@ while [[ ${iter} -lt ${N_IT} ]]; do
     mrcat ${RG_DIR}/* - -quiet | mrmath - sum ${TMP_DIR}/sum_it${iter}.nii.gz -axis 3 -quiet -force
     mrcat ${RGFOV_DIR}/* - -quiet | mrmath - sum ${TMP_DIR}/fovsum_it${iter}.nii.gz -axis 3 -quiet -force
     mrcalc ${TMP_DIR}/sum_it${iter}.nii.gz ${TMP_DIR}/fovsum_it${iter}.nii.gz -div ${TMP_DIR}/${INTER_NAME} -quiet -force
-    mrcalc ${TMP_DIR}/${INTER_NAME} -finite ${TMP_DIR}/${INTER_NAME} 0 -if ${TMP_DIR}/${INTER_NAME} -quiet -force
+    mrcalc ${TMP_DIR}/${INTER_NAME} -finite ${TMP_DIR}/${INTER_NAME} 0 -if -abs ${TMP_DIR}/${INTER_NAME} -quiet -force
 done
 
 #############################
