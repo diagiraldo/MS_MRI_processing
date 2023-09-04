@@ -51,7 +51,8 @@ mrcat ${TMP_DIR}/HRgrid1_TRA.nii ${TMP_DIR}/HRgrid1_*.nii - -quiet | mrmath - ma
 mrgrid ${TMP_DIR}/HRgrid1.nii crop -mask ${TMP_DIR}/HRgrid1.nii ${TMP_DIR}/HRgrid_fov1.nii -force -quiet
 
 # Pad HR fov grid such that all dimensions can be divided by a factor SF = slice spacing of reference
-SF=$( mrinfo ${REF_MASK} -spacing | cut -d" " -f3 )
+SF=$( mrinfo ${REF_MASK} -spacing -config RealignTransform 0 | cut -d" " -f3 )
+SF=$( printf "%0.0f" $SF )
 imdim=$(mrinfo ${TMP_DIR}/HRgrid_fov1.nii -size)
 xod=$(echo $imdim | cut -d' ' -f1)
 xnd=$(( ((${xod} + ${SF} - 1) / ${SF}) * ${SF} ))

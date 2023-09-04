@@ -57,7 +57,7 @@ do
 
 done < ${SS_LIST}
 
-# RE-RUN of: pre-processing, model-based SRR with Python implementation, segmentations
+# RE-RUN of: pre-processing, and model-based SRR with Python implementation
 
 while IFS= read -r line;
 do
@@ -69,8 +69,11 @@ do
     echo ""
 
     OUT_SRRpy=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRRpy.nii.gz
+    #rm ${OUT_SRRpy}
+    rm -r ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg
+    rm -r ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST
 
-    if [[ ! -f ${OUT_SRRpy} ]]; then
+    #if [[ ! -f ${OUT_SRRpy} ]]; then
 
         # Pre-process images
         echo "Starting pre-processing"
@@ -82,15 +85,17 @@ do
         echo ""
 
         # Use available LR FLAIR to obtain a HR image
+
         echo "Preparing LR FLAIR images"
         slcth=2
         # Copy LR FLAIR (and masks) to subfolders
         FL_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_preproc
         BM_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_masks
+        rm -r ${FL_DIR} ${BM_DIR}
         mkdir -p ${FL_DIR} ${BM_DIR}
         for IM in $(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*[Ff][Ll][Aa][Ii][Rr]*preproc.nii.gz); 
         do
-            SLC=$( mrinfo ${IM} -spacing | cut -d" " -f3 )
+            SLC=$( mrinfo ${IM} -spacing -config RealignTransform 0 | cut -d" " -f3 )
             if [[ ${SLC} > ${slcth} ]]; then
                 cp ${IM} ${FL_DIR}/.
                 cp ${IM%_preproc.nii.gz}_brainmask.nii.gz ${BM_DIR}/.
@@ -132,13 +137,30 @@ do
         echo "Output of model-based SRR in ${OUT_SRRpy}"
         echo ""
 
-    else
+    # else
 
-        echo "Output of model-based SRR already exists in ${OUT_SRRpy}"
-        echo ""
+    #     echo "Output of model-based SRR already exists in ${OUT_SRRpy}"
+    #     echo ""
 
-    fi
+    # fi
 
+    echo "-----------------------------------------"
+
+done < ${SS_LIST}
+
+####################################################################
+# RE-RUN of: segmentations
+
+while IFS= read -r line;
+do
+    CASE=$(echo $line | awk '{print $1}')
+    DATE=$(echo $line | awk '{print $2}')
+    echo "-----------------------------------------"
+    echo "Subject: ${CASE}"
+    echo "Session date: ${DATE}"
+    echo ""
+
+    OUT_SRRpy=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRRpy.nii.gz
     FLAIR_IM=${OUT_SRRpy}
 
     # Segmentations
@@ -160,7 +182,7 @@ do
 
     fi
 
-    if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST/${OUT_DIR}/ples_lpa.nii.gz ]]; then
+    if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST/ples_lpa.nii.gz ]]; then
 
         # Run LST
         echo "Starting LST for lesion segmentation"
