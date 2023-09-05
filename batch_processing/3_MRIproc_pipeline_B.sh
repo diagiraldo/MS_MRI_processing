@@ -57,7 +57,7 @@ do
 
 done < ${SS_LIST}
 
-# RE-RUN of: pre-processing, model-based SRR with Python implementation, segmentations
+# RE-RUN of: pre-processing, and model-based SRR with Python implementation
 
 while IFS= read -r line;
 do
@@ -82,15 +82,17 @@ do
         echo ""
 
         # Use available LR FLAIR to obtain a HR image
+
         echo "Preparing LR FLAIR images"
         slcth=2
         # Copy LR FLAIR (and masks) to subfolders
         FL_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_preproc
         BM_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_masks
+        rm -r ${BM_DIR}
         mkdir -p ${FL_DIR} ${BM_DIR}
         for IM in $(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*[Ff][Ll][Aa][Ii][Rr]*preproc.nii.gz); 
         do
-            SLC=$( mrinfo ${IM} -spacing | cut -d" " -f3 )
+            SLC=$( mrinfo ${IM} -spacing -config RealignTransform 0 | cut -d" " -f3 )
             if [[ ${SLC} > ${slcth} ]]; then
                 cp ${IM} ${FL_DIR}/.
                 cp ${IM%_preproc.nii.gz}_brainmask.nii.gz ${BM_DIR}/.
@@ -99,6 +101,7 @@ do
 
         # Histogram matching
         HM_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_hmatch
+        rm -r ${HM_DIR}
         zsh ${SCR_DIR}/histmatch_folder.sh ${FL_DIR} ${BM_DIR} ${HM_DIR}
         rm -r ${FL_DIR}
         echo "Histogram matching done"
@@ -135,49 +138,6 @@ do
     else
 
         echo "Output of model-based SRR already exists in ${OUT_SRRpy}"
-        echo ""
-
-    fi
-
-    FLAIR_IM=${OUT_SRRpy}
-
-    # Segmentations
-
-    if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg/seg.mgz ]]; then
-        
-        # Run SAMSEG for lesion and tissue segmentation
-        echo "Starting SAMSEG for segmentation"
-        OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg
-        mkdir -p ${OUT_DIR}
-        run_samseg --input ${FLAIR_IM} --pallidum-separate --lesion --lesion-mask-pattern 1 --output ${OUT_DIR} --threads 8
-        rm ${OUT_DIR}/mode*_bias_*.mgz ${OUT_DIR}/template_coregistered.mgz
-        echo "Samseg segmentation done"
-    
-    else
-
-        echo "Samseg segmentation already exists"
-        echo ""
-
-    fi
-
-    if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST/${OUT_DIR}/ples_lpa.nii.gz ]]; then
-
-        # Run LST
-        echo "Starting LST for lesion segmentation"
-        thLST=0.1
-        OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST
-        mkdir -p ${OUT_DIR}
-        INNII=${OUT_DIR}/input.nii
-        mrconvert ${FLAIR_IM} ${INNII} -quiet -force
-        PLES=${OUT_DIR}/ples_lpa_minput.nii
-        matlab -nodisplay -r "addpath('$SPM_DIR'); addpath('$SEGF_DIR'); cd '$OUT_DIR'; lst_lpa('$INNII', 0); lst_lpa_voi('$PLES', '$thLST'); exit"
-        mrconvert ${PLES} ${OUT_DIR}/ples_lpa.nii.gz -force -quiet
-        mv ${OUT_DIR}/LST_tlv_${thLST}_*.csv ${OUT_DIR}/LST_lpa_${thLST}.csv
-        rm ${OUT_DIR}/input.nii ${OUT_DIR}/minput.nii ${OUT_DIR}/LST_lpa_minput.mat ${PLES}
-
-    else
-
-        echo "LST lesion segmentation already exists"
         echo ""
 
     fi

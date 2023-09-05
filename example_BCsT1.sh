@@ -36,10 +36,11 @@ slcth=2
 # Copy LR FLAIR (and masks) to subfolders
 FL_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_preproc
 BM_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_masks
-mkdir -p ${FL_DIR} ${BM_DIR}
+rm -r ${BM_DIR}
+mkdir -p ${BM_DIR}
 for IM in $(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*[Ff][Ll][Aa][Ii][Rr]*preproc.nii.gz); 
 do
-    SLC=$( mrinfo ${IM} -spacing | cut -d" " -f3 )
+    SLC=$( mrinfo ${IM} -spacing -config RealignTransform 0 | cut -d" " -f3 )
     if [[ ${SLC} > ${slcth} ]]; then
         cp ${IM} ${FL_DIR}/.
         cp ${IM%_preproc.nii.gz}_brainmask.nii.gz ${BM_DIR}/.
@@ -62,21 +63,28 @@ OP_INTERP=cubic
 HRFL_INT=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_interp.nii.gz
 zsh ${SCR_DIR}/mSR_interpolation.sh ${HM_DIR} ${BM_DIR} ${HR_grid} ${OP_INTERP} ${N_IT} ${HRFL_INT}
 
-# Model-based SRR
-# Adjust LR images for model-based SRR
+# Model-based SRR with python code
+# Adjust LR images
 LRADJ_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_adjusted
-zsh ${SCR_DIR}/adjust_LRimages_mbSRR.sh ${HM_DIR} ${HR_grid} ${LRADJ_DIR}
+BMADJ_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_MASK_adjusted
+FOVADJ_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FOV_adjusted
+zsh ${SCR_DIR}/adjust_LRimages_mbSRR.sh ${HR_grid} ${HM_DIR} ${BM_DIR} ${LRADJ_DIR} ${BMADJ_DIR} ${FOVADJ_DIR}
 # Run python script
 LAMBDA=0.1
-HRFL_SRR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRR.nii.gz
-zsh ${SCR_DIR}/model-based_SRR.sh ${LRADJ_DIR} ${HRFL_INT} ${LAMBDA} ${STORM_DIR} ${HRFL_SRR}
+OUT_SRRpy=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRRpy.nii.gz
+zsh ${SCR_DIR}/model-based_SRR_py.sh ${HRFL_INT} ${LRADJ_DIR} ${FOVADJ_DIR} ${LAMBDA} ${STORM_DIR} ${OUT_SRRpy}
+
+# Model-based SRR with matlab code: LR images do not need to be adjuste but it takes ages!
+LAMBDA=0.1
+OUT_SRRmat=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRRmat.nii.gz
+zsh ${SCR_DIR}/model-based_SRR_matlab.sh ${HM_DIR} ${BM_DIR} ${HRFL_INT} ${LAMBDA} ${mSRR_DIR} ${BB_DIR} ${OUT_SRRmat}
 
 ###################################################################################
 # Align HR reconstructed to fast FLAIR
 REF_SEQ=Flair_fast
 REF_IM=$(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*${REF_SEQ}*_preproc.nii* | head -n 1 )
 REF_MASK=$(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*${REF_SEQ}*_brainmask.nii* | head -n 1 )
-MOV_IM=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRR.nii.gz
+MOV_IM=${OUT_SRRpy}
 hd-bet -i ${MOV_IM} -o ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRR_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
 MOV_MASK=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRR_bet_mask.nii.gz
 OUT_PRE=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/rigreg_mbSRR_to_${REF_SEQ}_

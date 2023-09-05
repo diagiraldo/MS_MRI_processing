@@ -69,11 +69,8 @@ do
     echo ""
 
     OUT_SRRpy=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRRpy.nii.gz
-    #rm ${OUT_SRRpy}
-    rm -r ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg
-    rm -r ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST
 
-    #if [[ ! -f ${OUT_SRRpy} ]]; then
+    if [[ ! -f ${OUT_SRRpy} ]]; then
 
         # Pre-process images
         echo "Starting pre-processing"
@@ -91,7 +88,7 @@ do
         # Copy LR FLAIR (and masks) to subfolders
         FL_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_preproc
         BM_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_masks
-        rm -r ${FL_DIR} ${BM_DIR}
+        rm -r ${BM_DIR}
         mkdir -p ${FL_DIR} ${BM_DIR}
         for IM in $(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*[Ff][Ll][Aa][Ii][Rr]*preproc.nii.gz); 
         do
@@ -137,12 +134,12 @@ do
         echo "Output of model-based SRR in ${OUT_SRRpy}"
         echo ""
 
-    # else
+    else
 
-    #     echo "Output of model-based SRR already exists in ${OUT_SRRpy}"
-    #     echo ""
+        echo "Output of model-based SRR already exists in ${OUT_SRRpy}"
+        echo ""
 
-    # fi
+    fi
 
     echo "-----------------------------------------"
 
@@ -161,7 +158,13 @@ do
     echo ""
 
     OUT_SRRpy=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRRpy.nii.gz
-    FLAIR_IM=${OUT_SRRpy}
+    
+    epsilon=0.01
+    FLAIR_IM=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_seginput.nii.gz
+    mrcalc ${OUT_SRRpy} 0 ${epsilon} -replace ${FLAIR_IM} -force -quiet
+
+    hd-bet -i ${FLAIR_IM} -o ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
+    rm ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz
 
     # Segmentations
 
@@ -171,10 +174,15 @@ do
         echo "Starting SAMSEG for segmentation"
         OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg
         mkdir -p ${OUT_DIR}
-        run_samseg --input ${FLAIR_IM} --pallidum-separate --lesion --lesion-mask-pattern 1 --output ${OUT_DIR} --threads 8
+        run_samseg --input ${FLAIR_IM} --output ${OUT_DIR} \
+        --pallidum-separate --lesion --lesion-mask-pattern 1 \
+        --random-seed 22 --threads 8
         rm ${OUT_DIR}/mode*_bias_*.mgz ${OUT_DIR}/template_coregistered.mgz
         echo "Samseg segmentation done"
-    
+        # Check unknowns within brain
+        mrcalc ${OUT_DIR}/seg.mgz 0 -eq ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet_mask.nii.gz -mult ${OUT_DIR}/unknownswithinbrain.nii.gz -datatype bit -force -quiet
+        mrstats ${OUT_DIR}/unknownswithinbrain.nii.gz -mask ${OUT_DIR}/unknownswithinbrain.nii.gz -quiet -output count > ${OUT_DIR}/count_unknownswithinbrain.txt
+
     else
 
         echo "Samseg segmentation already exists"
@@ -203,6 +211,8 @@ do
         echo ""
 
     fi
+
+    rm ${FLAIR_IM}
 
     echo "-----------------------------------------"
 

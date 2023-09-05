@@ -44,7 +44,7 @@ BM_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LR_FLAIR_masks
 mkdir -p ${FL_DIR} ${BM_DIR}
 for IM in $(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*[Ff][Ll][Aa][Ii][Rr]*preproc.nii.gz); 
 do
-    SLC=$( mrinfo ${IM} -spacing | cut -d" " -f3 )
+    SLC=$( mrinfo ${IM} -spacing -config RealignTransform 0 | cut -d" " -f3 )
     if [[ ${SLC} > ${slcth} ]]; then
         cp ${IM} ${FL_DIR}/.
         cp ${IM%_preproc.nii.gz}_brainmask.nii.gz ${BM_DIR}/.
@@ -85,13 +85,23 @@ zsh ${SCR_DIR}/model-based_SRR_matlab.sh ${HM_DIR} ${BM_DIR} ${HRFL_INT} ${LAMBD
 
 ###################################################################################
 # Segmentations 
-FLAIR_IM=${OUT_SRRpy}
+epsilon=0.001
+FLAIR_IM=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_seginput.nii.gz
+mrcalc ${OUT_SRRpy} 0 ${epsilon} -replace ${FLAIR_IM} -force -quiet
+
+hd-bet -i ${FLAIR_IM} -o ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
+rm ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz
 
 # SAMSEG
 OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg
 mkdir -p ${OUT_DIR}
-run_samseg --input ${FLAIR_IM} --pallidum-separate --lesion --lesion-mask-pattern 1 --output ${OUT_DIR} --threads 8
+run_samseg --input ${FLAIR_IM} --output ${OUT_DIR} \
+--pallidum-separate --lesion --lesion-mask-pattern 1 \
+--random-seed 22 --threads 8
 rm ${OUT_DIR}/mode*_bias_*.mgz ${OUT_DIR}/template_coregistered.mgz
+# Check unknowns within brain
+mrcalc ${OUT_DIR}/seg.mgz 0 -eq ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet_mask.nii.gz -mult ${OUT_DIR}/unknownswithinbrain.nii.gz -datatype bit -force -quiet
+mrstats ${OUT_DIR}/unknownswithinbrain.nii.gz -mask ${OUT_DIR}/unknownswithinbrain.nii.gz -quiet -output count > ${OUT_DIR}/count_unknownswithinbrain.txt
 
 # LST
 # threshold for segmentation

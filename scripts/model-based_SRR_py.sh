@@ -64,13 +64,20 @@ echo "Slice spacing: ${SLCSPA}"
 echo "Slice thickness: ${SLCTHCK}"
 echo ""
 
+if [[ ${SLCSPA} < 4 ]]; 
+then 
+    INIT_IMSTEP=10000
+else
+    INIT_IMSTEP=100000
+fi
+
 # Call orthogonal_srr in STORM
 N_ITER=20
-# Ordered list of LR images
+# motion correction with respect to the first LR image in list.
 ${STORM_DIR}/storm/dependencies/orthogonal_srr.py --HRref-fpath ${TMP_DIR}/HR.nii.gz --init-HRref \
 --LR-fpaths ${LR_DIR}/LR_TRA.nii.gz $(ls ${LR_DIR}/LR_(SAG|COR).nii.gz) \
 --LRmasks-fpaths ${MSK_DIR}/LR_TRA.nii.gz $(ls ${MSK_DIR}/LR_(SAG|COR).nii.gz) \
---slice-spacing ${SLCSPA} --reg-weight ${LAMBDA} --n-iterations ${N_ITER} \
+--slice-spacing ${SLCSPA} --reg-weight ${LAMBDA} --n-iterations ${N_ITER} --init-step ${INIT_IMSTEP} 0.1 0.1 \
 --out-dir ${TMP_DIR} --print-info --save-optim-history
 #--slice-thickness ${SLCTHCK} \ 
 
