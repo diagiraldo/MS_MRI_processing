@@ -26,7 +26,7 @@ PRO_DIR=/home/vlab/MS_proj/processed_MRI
 PP=B
 SS_LIST=/home/vlab/MS_proj/info_files/subject_date_proc_${PP}.txt
 
-# BEFORE RUNING PIPELINE Move previous reconstructions and results
+# BEFORE Re-running pipeline, move previous reconstructions and results
 while IFS= read -r line;
 do
     CASE=$(echo $line | awk '{print $1}')
@@ -141,6 +141,91 @@ do
         echo ""
 
     fi
+
+    echo "-----------------------------------------"
+
+done < ${SS_LIST}
+
+####################################################################
+# RE-RUN of: segmentations
+
+while IFS= read -r line;
+do
+    CASE=$(echo $line | awk '{print $1}')
+    DATE=$(echo $line | awk '{print $2}')
+    echo "-----------------------------------------"
+    echo "Subject: ${CASE}"
+    echo "Session date: ${DATE}"
+    echo ""
+
+    OUT_SRRpy=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRRpy.nii.gz
+    FLAIR_IM=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_seginput.nii.gz
+    
+    
+    # Segmentations
+
+    if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg/seg.mgz ]]; then
+
+        if [[ ! -f ${FLAIR_IM} ]];
+        then
+            epsilon=0.01
+            mrcalc ${OUT_SRRpy} 0 ${epsilon} -replace ${FLAIR_IM} -force -quiet
+        fi
+        
+        # Run SAMSEG for lesion and tissue segmentation
+        echo "Starting SAMSEG for segmentation"
+        OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg
+        mkdir -p ${OUT_DIR}
+        run_samseg --input ${FLAIR_IM} --output ${OUT_DIR} \
+        --pallidum-separate --lesion --lesion-mask-pattern 1 \
+        --random-seed 22 --threads 8
+        rm ${OUT_DIR}/mode*_bias_*.mgz ${OUT_DIR}/template_coregistered.mgz
+        echo "Samseg segmentation done"
+        # Check unknowns within brain
+        if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet_mask.nii.gz ]];
+        then
+            hd-bet -i ${FLAIR_IM} -o ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
+            rm ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz
+        fi 
+        mrcalc ${OUT_DIR}/seg.mgz 0 -eq ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet_mask.nii.gz -mult ${OUT_DIR}/unknownswithinbrain.nii.gz -datatype bit -force -quiet
+        mrstats ${OUT_DIR}/unknownswithinbrain.nii.gz -mask ${OUT_DIR}/unknownswithinbrain.nii.gz -quiet -output count > ${OUT_DIR}/count_unknownswithinbrain.txt
+
+    else
+
+        echo "Samseg segmentation already exists"
+        echo ""
+
+    fi
+
+    if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST/ples_lpa.nii.gz ]]; then
+
+        if [[ ! -f ${FLAIR_IM} ]];
+        then
+            epsilon=0.01
+            mrcalc ${OUT_SRRpy} 0 ${epsilon} -replace ${FLAIR_IM} -force -quiet
+        fi
+
+        # Run LST
+        echo "Starting LST for lesion segmentation"
+        thLST=0.1
+        OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST
+        mkdir -p ${OUT_DIR}
+        INNII=${OUT_DIR}/input.nii
+        mrconvert ${FLAIR_IM} ${INNII} -quiet -force
+        PLES=${OUT_DIR}/ples_lpa_minput.nii
+        matlab -nodisplay -r "addpath('$SPM_DIR'); addpath('$SEGF_DIR'); cd '$OUT_DIR'; lst_lpa('$INNII', 0); lst_lpa_voi('$PLES', '$thLST'); exit"
+        mrconvert ${PLES} ${OUT_DIR}/ples_lpa.nii.gz -force -quiet
+        mv ${OUT_DIR}/LST_tlv_${thLST}_*.csv ${OUT_DIR}/LST_lpa_${thLST}.csv
+        rm ${OUT_DIR}/input.nii ${OUT_DIR}/minput.nii ${OUT_DIR}/LST_lpa_minput.mat ${PLES}
+
+    else
+
+        echo "LST lesion segmentation already exists"
+        echo ""
+
+    fi
+
+    #rm ${FLAIR_IM}
 
     echo "-----------------------------------------"
 

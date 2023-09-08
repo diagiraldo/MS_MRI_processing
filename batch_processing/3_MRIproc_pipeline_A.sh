@@ -158,17 +158,17 @@ do
     echo ""
 
     OUT_SRRpy=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_mbSRRpy.nii.gz
-    
-    epsilon=0.01
     FLAIR_IM=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_seginput.nii.gz
-    mrcalc ${OUT_SRRpy} 0 ${epsilon} -replace ${FLAIR_IM} -force -quiet
-
-    hd-bet -i ${FLAIR_IM} -o ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
-    rm ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz
-
+     
     # Segmentations
 
     if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/samseg/seg.mgz ]]; then
+
+        if [[ ! -f ${FLAIR_IM} ]];
+        then
+            epsilon=0.01
+            mrcalc ${OUT_SRRpy} 0 ${epsilon} -replace ${FLAIR_IM} -force -quiet
+        fi
         
         # Run SAMSEG for lesion and tissue segmentation
         echo "Starting SAMSEG for segmentation"
@@ -180,6 +180,11 @@ do
         rm ${OUT_DIR}/mode*_bias_*.mgz ${OUT_DIR}/template_coregistered.mgz
         echo "Samseg segmentation done"
         # Check unknowns within brain
+        if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet_mask.nii.gz ]];
+        then
+            hd-bet -i ${FLAIR_IM} -o ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
+            rm ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet.nii.gz
+        fi 
         mrcalc ${OUT_DIR}/seg.mgz 0 -eq ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/HR_FLAIR_bet_mask.nii.gz -mult ${OUT_DIR}/unknownswithinbrain.nii.gz -datatype bit -force -quiet
         mrstats ${OUT_DIR}/unknownswithinbrain.nii.gz -mask ${OUT_DIR}/unknownswithinbrain.nii.gz -quiet -output count > ${OUT_DIR}/count_unknownswithinbrain.txt
 
@@ -191,6 +196,12 @@ do
     fi
 
     if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST/ples_lpa.nii.gz ]]; then
+
+        if [[ ! -f ${FLAIR_IM} ]];
+        then
+            epsilon=0.01
+            mrcalc ${OUT_SRRpy} 0 ${epsilon} -replace ${FLAIR_IM} -force -quiet
+        fi
 
         # Run LST
         echo "Starting LST for lesion segmentation"
@@ -212,7 +223,7 @@ do
 
     fi
 
-    rm ${FLAIR_IM}
+    #rm ${FLAIR_IM}
 
     echo "-----------------------------------------"
 
