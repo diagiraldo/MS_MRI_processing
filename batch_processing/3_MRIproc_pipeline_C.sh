@@ -117,34 +117,32 @@ do
         echo "Samseg segmentation already exists"
         echo ""
 
-    fi 
+    fi      
 
-    if [[ ! -f ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST/ples_lpa.nii.gz ]]; then
+done < ${SS_LIST}
 
-        if [[ ! -f ${FLAIR_IM} ]];
-        then
-            epsilon=0.01
-            mrcalc ${OUT_HRFLAIR} 0 ${epsilon} -replace ${FLAIR_IM} -force -quiet
-        fi
+while IFS= read -r line;
+do
+    CASE=$(echo $line | awk '{print $1}')
+    DATE=$(echo $line | awk '{print $2}')
+    echo "-----------------------------------------"
+    echo "Subject: ${CASE}"
+    echo "Session date: ${DATE}"
+    echo ""
 
-        # Run LST
-        echo "Starting LST for lesion segmentation"
-        thLST=0.1
-        OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST
-        mkdir -p ${OUT_DIR}
-        INNII=${OUT_DIR}/input.nii
-        mrconvert ${FLAIR_IM} ${INNII} -quiet -force
-        PLES=${OUT_DIR}/ples_lpa_minput.nii
-        matlab -nodisplay -r "addpath('$SPM_DIR'); addpath('$SEGF_DIR'); cd '$OUT_DIR'; lst_lpa('$INNII', 0); lst_lpa_voi('$PLES', '$thLST'); exit"
-        mrconvert ${PLES} ${OUT_DIR}/ples_lpa.nii.gz -force -quiet
-        mv ${OUT_DIR}/LST_tlv_${thLST}_*.csv ${OUT_DIR}/LST_lpa_${thLST}.csv
-        rm ${OUT_DIR}/input.nii ${OUT_DIR}/minput.nii ${OUT_DIR}/LST_lpa_minput.mat ${PLES}
+    OUT_HRFLAIR=$(ls ${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/*(Flair_fast|Brain_VIEW_FLAIR)*_preproc.nii* | head -n 1 )
+
+    # Run LST
+    echo "Starting LST for lesion segmentation"
+    thLST=0.1
+    OUT_DIR=${PRO_DIR}/sub-${CASE}/ses-${DATE}/anat/LST
+    mkdir -p ${OUT_DIR}
+    INNII=${OUT_DIR}/input.nii
+    mrconvert ${OUT_HRFLAIR} ${INNII} -quiet -force
+    PLES=${OUT_DIR}/ples_lpa_minput.nii
+    matlab -nodisplay -r "addpath('$SPM_DIR'); addpath('$SEGF_DIR'); cd '$OUT_DIR'; lst_lpa('$INNII', 0); lst_lpa_voi('$PLES', '$thLST'); exit"
+    mrconvert ${PLES} ${OUT_DIR}/ples_lpa.nii.gz -force -quiet
+    mv ${OUT_DIR}/LST_tlv_${thLST}_*.csv ${OUT_DIR}/LST_lpa_${thLST}.csv
+    rm ${OUT_DIR}/input.nii ${OUT_DIR}/minput.nii ${OUT_DIR}/LST_lpa_minput.mat ${PLES}
     
-    else
-
-        echo "LST lesion segmentation already exists"
-        echo ""
-
-    fi       
-
 done < ${SS_LIST}

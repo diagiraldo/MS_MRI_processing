@@ -53,12 +53,12 @@ DF <- DF %>%
 
 # Save info
 write.csv(DF, 
-          file = "/home/vlab/MS_proj/feature_tables/MRI_features_25012023.csv", 
+          file = "/home/vlab/MS_proj/feature_tables/MRI_features_13092023.csv", 
           row.names = FALSE)
 
 dict <- data.frame(VarName = names(DF), Description = "")
 write.csv(dict, 
-          file = "/home/vlab/MS_proj/feature_tables/dictionary_MRI_features_25012023.csv", 
+          file = "/home/vlab/MS_proj/feature_tables/dictionary_MRI_features_13092023.csv", 
           row.names = FALSE)
 
 # Plot Lesion volume estimations

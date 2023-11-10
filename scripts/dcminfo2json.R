@@ -25,7 +25,8 @@ if ( file.size(dcminfo_file) > 0 ){
     select(-V1) %>%
     unique(.) %>%
     left_join(., dcmtags, by = "tag") %>%
-    mutate(Keyword = ifelse(tag == "2001,100B", "SliceOrientation", Keyword))
+    mutate(Keyword = ifelse(tag == "2001,100B", "SliceOrientation", Keyword),
+           Keyword = ifelse(tag == "2005,102A", "MRPatientReferenceID", Keyword))
   # Reshape
   info <- linfo$value
   names(info) <- linfo$Keyword
