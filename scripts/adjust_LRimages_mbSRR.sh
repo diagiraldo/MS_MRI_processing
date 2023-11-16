@@ -49,8 +49,9 @@ do
     mrconvert ${IN_BM_DIR}/${BASENAME}_brainmask.nii.gz ${MASK_DIR}/LR_${ORI}.nii -quiet -force
 done
 
-# Get slice spacing from transversal image
+# Scaling Factor: Get the integer part slice spacing from transversal image
 SF=$( mrinfo ${IMG_DIR}/LR_TRA.nii -spacing | cut -d" " -f3 )
+SF=$( printf "%0.0f" $SF )
 
 # Get isotropic voxel size from HR grid
 ISOVOX=$( mrinfo ${TMP_DIR}/HRgrid.nii -spacing | cut -d" " -f1 )

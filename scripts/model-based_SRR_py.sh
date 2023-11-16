@@ -58,8 +58,9 @@ done
 
 # Get info about slice profile (with Transversal image)
 ex_JSON=${TMP_DIR}/LR_TRA.json
-SLCSPA=$( cat ${ex_JSON} | grep -Po '"Spacing​Between​Slices":.*?[^\\]",' | cut -d" " -f2 | sed 's/\"//g' | sed 's/,//' )
-SLCTHCK=$( cat ${ex_JSON} | grep -Po '"Slice​Thickness":.*?[^\\]",' | cut -d" " -f2 | sed 's/\"//g' | sed 's/,//' )
+SLCSPA=$( mrinfo ${LR_DIR}/LR_TRA.nii.gz -spacing | cut -d" " -f3 )
+#SLCSPA=$( cat ${ex_JSON} | grep -Po '"(Spacing​Between​Slices|Spacing.Between.Slices)":.*?[^\\]",' | cut -d" " -f2 | sed 's/\"//g' | sed 's/,//' )
+SLCTHCK=$( cat ${ex_JSON} | grep -Po '"(Slice​Thickness|Slice.Thickness)":.*?[^\\]",' | cut -d" " -f2 | sed 's/\"//g' | sed 's/,//' )
 echo "Slice spacing: ${SLCSPA}"
 echo "Slice thickness: ${SLCTHCK}"
 echo ""
@@ -74,7 +75,7 @@ fi
 # Call orthogonal_srr in STORM
 N_ITER=20
 # motion correction with respect to the first LR image in list.
-${STORM_DIR}/storm/dependencies/orthogonal_srr.py --HRref-fpath ${TMP_DIR}/HR.nii.gz --init-HRref \
+${STORM_DIR}/scripts/orthogonal_srr.py --HRref-fpath ${TMP_DIR}/HR.nii.gz --init-HRref \
 --LR-fpaths ${LR_DIR}/LR_TRA.nii.gz $(ls ${LR_DIR}/LR_(SAG|COR).nii.gz) \
 --LRmasks-fpaths ${MSK_DIR}/LR_TRA.nii.gz $(ls ${MSK_DIR}/LR_(SAG|COR).nii.gz) \
 --slice-spacing ${SLCSPA} --reg-weight ${LAMBDA} --n-iterations ${N_ITER} --init-step ${INIT_IMSTEP} 0.1 0.1 \

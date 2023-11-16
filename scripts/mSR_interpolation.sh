@@ -79,11 +79,11 @@ while [[ ${iter} -lt ${N_IT} ]]; do
     if [[ ${iter} -gt 1 ]]
     then
         REG_REF=${TMP_DIR}/${INTER_NAME}
-        RIG_INIT="-rigid_init_matrix ${TMP_DIR}/rigid_it$((${iter}-1))/PRE.txt"
+        RIG_INIT="-rigid_init_matrix ${TMP_DIR}/rigid_it$((${iter}-1))/PRE.txt -rigid_scale 0.5,1.0"
         GRID_REF=${REG_REF}
     else
         REG_REF=$( ls ${LR_DIR}/*TRA*.nii* | head -n 1 )
-        RIG_INIT=""
+        RIG_INIT="-rigid_scale 0.5,1.0"
         GRID_REF=${TMP_DIR}/${GRID_NAME}
     fi
     # Mask of reference image

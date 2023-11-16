@@ -33,7 +33,13 @@ cp ${IN_DIR}/*.nii*  ${IMG_DIR}/.
 cp ${INMSK_DIR}/*.nii* ${MASK_DIR}/.
 
 # Select transversal/axial as reference 
-IM_REF=$(ls ${IMG_DIR}/sub-*_ses-*_*TRA_preproc.nii* | head -n 1 )
+nTRA=$(find ${IMG_DIR} -name "sub-*_ses-*_*TRA_preproc.nii*" -type f | wc -l)
+if [ $nTRA -gt 0 ]; then
+    IM_REF=$(ls ${IMG_DIR}/sub-*_ses-*_*TRA_preproc.nii* | head -n 1 )
+else
+    IM_REF=$(ls ${IMG_DIR}/sub-*_ses-*_*preproc.nii* | head -n 1 )
+fi
+
 FILENAME=${IM_REF##*/}
 MASK_REF=${MASK_DIR}/${${FILENAME}%_preproc.nii.gz}_brainmask.nii.gz
 

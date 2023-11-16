@@ -10,13 +10,15 @@ library(ggplot2)
 
 # Input: File with acquisition info
 acqfile <- "/home/vlab/MS_proj/info_files/acquisition_info_zuyderland.tsv"
+scrdir <- "/home/vlab/MS_MRI_processing/data"
 
 # Read table with info extracted from DICOMS
 DF <- read.table(acqfile, sep = "\t", header = TRUE, colClasses = "character") %>%
-  mutate(across(c(Slice.Thickness, Spacing.Between.Slices, 
+  mutate(across(c(Slice.Thickness, Spacing.Between.Slices, Flip.Angle,
                   Repetition.Time, Echo.Time, Inversion.Time,
                   n.dcm.infolder, n.Instances,
-                  DiffusionB.Value), 
+                  DiffusionB.Value,
+                  Magnetic.Field.Strength), 
                 as.numeric),
          Study.Date = ymd(as.Date(Study.Date))) %>%
   select(-any_of(c("Instance.Creation.Date", 
@@ -31,10 +33,10 @@ DF <- read.table(acqfile, sep = "\t", header = TRUE, colClasses = "character") %
 # Some labels we can be sure about
 DF <- DF %>%
   mutate(Img.Contrast = case_when(
-    (DiffusionB.Value >= 0) ~ "DWI",
+    (DiffusionB.Value > 0) ~ "DWI",
     (Manufacturer.Model.Name == "Avanto_fit" & Repetition.Time > 8000 & Echo.Time > 70 & Inversion.Time > 2400) ~ "FLAIR",
     (Manufacturer.Model.Name == "Avanto_fit" & Repetition.Time < 1250 & Repetition.Time > 300 & Echo.Time < 30 & Echo.Time > 7) ~ "T1W",
-    (Manufacturer.Model.Name == "Avanto_fit" & Repetition.Time < 4 & Echo.Time < 4) ~ "DCE", #dynamic contrast-enhanced MRI, Angiography?
+    (Manufacturer.Model.Name == "Avanto_fit" & Repetition.Time < 4 & Echo.Time < 4) ~ "Spoiled", #dynamic contrast-enhanced MRI, Angiography?
     (Manufacturer.Model.Name == "Avanto_fit" & grepl("DIFFUSION", Image.Type)) ~ "DWI",
     (Manufacturer.Model.Name == "Avanto_fit" & Repetition.Time >= 5000 & Repetition.Time <= 8000 & Echo.Time > 95 & Echo.Time < 100) ~ "T2W",
     (Manufacturer.Model.Name == "Skyra" & Repetition.Time == 9000 & Echo.Time == 81 & Inversion.Time == 2500) ~ "FLAIR",
@@ -68,11 +70,12 @@ DF <- DF %>%
          SV.OSP = grepl("OSP", Sequence.Variant),
          SV.SK = grepl("SK", Sequence.Variant),
          SV.SS = grepl("SS", Sequence.Variant),
-         has.b.value = !is.na(DiffusionB.Value))
+         has.b.value = !is.na(DiffusionB.Value) & DiffusionB.Value > 0)
 
 ################################################################################
 # Identify FLAIR in other scanners
 library(rpart)
+library(rpart.plot)
 library(caret)
 
 id_vars <- c("Subject", "Session", "InfoName")
@@ -80,8 +83,8 @@ acq_vars <- c("Manufacturer.Model.Name",
               "SS.GR", "SS.EP", "SS.SE", "SS.IR", "SS.RM",
               "SV.MP", "SV.MTC", "SV.SP", "SV.OSP", "SV.SK", "SV.SS",
               "MR.Acquisition.Type",
-              "Repetition.Time", "Echo.Time", "Inversion.Time",
-              "has.b.value")
+              "Repetition.Time", "Echo.Time", "Inversion.Time", "Flip.Angle",
+              "has.b.value", "Magnetic.Field.Strength")
 lbl_vars <- c("Img.Contrast")
 
 # Training Set
@@ -102,6 +105,9 @@ printcp(tree)
 #rpart.rules(tree)
 #plotcp(tree)
 confusionMatrix(predict(tree, A, type = 'class'), A$Img.Contrast)
+
+# Save decision tree
+saveRDS(tree, file = sprintf("%s/decisiontree_imgcontrast.rda", scrdir))
 
 # Testing Set
 B <- DF %>%
