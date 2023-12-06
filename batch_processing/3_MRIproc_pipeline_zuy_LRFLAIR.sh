@@ -99,50 +99,50 @@ do
         mv ${IM_DIR}/HR_FLAIR_bet_mask.nii.gz ${HRFLMASK}
     fi 
 
-    # Look for T1W
-    nT1=$(find ${IM_DIR} -name "sub-${SUB}_ses-${SESS}_*__T1W_preproc.nii.gz" -type f | wc -l)
-    if [ $nT1 -eq 0 ]; then
-        echo "No T1W"
+    # # Look for T1W
+    # nT1=$(find ${IM_DIR} -name "sub-${SUB}_ses-${SESS}_*__T1W_preproc.nii.gz" -type f | wc -l)
+    # if [ $nT1 -eq 0 ]; then
+    #     echo "No T1W"
 
-    else
+    # else
 
-        HRT1=$(find ${IM_DIR}/sub-${SUB}_ses-${SESS}_*__T1W_preproc.nii.gz)
-        HRT1MASK=$(find ${IM_DIR}/sub-${SUB}_ses-${SESS}_*__T1W_brainmask.nii.gz)
-        echo "Input HR T1W: ${HRT1}"
+    #     HRT1=$(find ${IM_DIR}/sub-${SUB}_ses-${SESS}_*__T1W_preproc.nii.gz)
+    #     HRT1MASK=$(find ${IM_DIR}/sub-${SUB}_ses-${SESS}_*__T1W_brainmask.nii.gz)
+    #     echo "Input HR T1W: ${HRT1}"
 
-        # Align T1W to FLAIR
-        OUT_PRE=${IM_DIR}/rigreg_T1W_to_FLAIR_
+    #     # Align T1W to FLAIR
+    #     OUT_PRE=${IM_DIR}/rigreg_T1W_to_FLAIR_
 
-        if [[ ! -f ${OUT_PRE}transformed.nii.gz ]]; then
-            antsRegistration --dimensionality 3 --output \[ ${OUT_PRE} \] \
-            --collapse-output-transforms 1 \
-            --interpolation Linear \
-            --initial-moving-transform \[ ${HRFLAIR},${HRT1},1 \] \
-            --metric MI\[ ${HRFLAIR},${HRT1},1,32,Regular,0.25 \] \
-            --transform Rigid\[ 0.1 \] \
-            --convergence \[ 1000x500x250x0,1e-6,10 \] \
-            --smoothing-sigmas 3x2x1x0vox \
-            --shrink-factors 8x4x2x1 \
-            --use-histogram-matching 0 \
-            --winsorize-image-intensities \[ 0.005,0.995 \] \
-            --masks \[ ${HRFLMASK},${HRT1MASK} \] \
-            --float 0 \
-            --verbose 0
+    #     if [[ ! -f ${OUT_PRE}transformed.nii.gz ]]; then
+    #         antsRegistration --dimensionality 3 --output \[ ${OUT_PRE} \] \
+    #         --collapse-output-transforms 1 \
+    #         --interpolation Linear \
+    #         --initial-moving-transform \[ ${HRFLAIR},${HRT1},1 \] \
+    #         --metric MI\[ ${HRFLAIR},${HRT1},1,32,Regular,0.25 \] \
+    #         --transform Rigid\[ 0.1 \] \
+    #         --convergence \[ 1000x500x250x0,1e-6,10 \] \
+    #         --smoothing-sigmas 3x2x1x0vox \
+    #         --shrink-factors 8x4x2x1 \
+    #         --use-histogram-matching 0 \
+    #         --winsorize-image-intensities \[ 0.005,0.995 \] \
+    #         --masks \[ ${HRFLMASK},${HRT1MASK} \] \
+    #         --float 0 \
+    #         --verbose 0
 
-            antsApplyTransforms --dimensionality 3 \
-            --input ${HRT1} \
-            --reference-image ${HRFLAIR} \
-            --output ${OUT_PRE}transformed.nii.gz \
-            --interpolation BSpline \
-            --transform ${OUT_PRE}0GenericAffine.mat
+    #         antsApplyTransforms --dimensionality 3 \
+    #         --input ${HRT1} \
+    #         --reference-image ${HRFLAIR} \
+    #         --output ${OUT_PRE}transformed.nii.gz \
+    #         --interpolation BSpline \
+    #         --transform ${OUT_PRE}0GenericAffine.mat
 
-            mrcalc ${OUT_PRE}transformed.nii.gz 0 -lt 0 ${OUT_PRE}transformed.nii.gz -if ${OUT_PRE}transformed.nii.gz -force -quiet
+    #         mrcalc ${OUT_PRE}transformed.nii.gz 0 -lt 0 ${OUT_PRE}transformed.nii.gz -if ${OUT_PRE}transformed.nii.gz -force -quiet
 
-        else
-            echo "T1 aligned to FLAIR already exists"
+    #     else
+    #         echo "T1 aligned to FLAIR already exists"
 
-        fi
-    fi
+    #     fi
+    # fi
 
     # SAMSEG segmentation
 

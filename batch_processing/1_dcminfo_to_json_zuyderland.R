@@ -13,6 +13,7 @@ args = commandArgs(trailingOnly=TRUE)
 # Inputs
 ACQ_DIR = args[1]
 #ACQ_DIR = "/mnt/extradata/MRI_Zuyderland/acquisition_info"
+# ACQ_DIR = "/mnt/extradata/MSPELT_2/remaining_acquisition_info"
 dcmtags_file <- args[2]
 #dcmtags_file <- "/home/vlab/MS_MRI_processing/data/dicomtags.csv"
 
@@ -75,17 +76,3 @@ for (subcode in sublist){
     }
   }
 }
-
-# subcode <- "zuy-005"
-# subdir <- paste(ACQ_DIR, subcode, sep = "/")
-# sesslist <- list.dirs(path = subdir,
-#                       recursive = FALSE, full.names = FALSE)
-# 
-# sesscode <- "20150127"
-# sessdir <- paste(subdir, sesscode, sep = "/")
-# folderlist <- list.dirs(path = sessdir,
-#                         recursive = FALSE, full.names = FALSE)
-# 
-# foldercode <- "00001FE0"
-# folderdir <- paste(sessdir, foldercode, sep = "/")
-# filelist <- list.files(path = folderdir, pattern = "\\.txt$")

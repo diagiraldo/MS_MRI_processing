@@ -52,9 +52,8 @@ do
             antsRegistration --dimensionality 3 --output \[ ${OUT_PRE} \] \
             --collapse-output-transforms 1 \
             --interpolation Linear \
-            --initial-moving-transform \[ ${HRFLAIR},${HRT1},1 \] \
             --metric MI\[ ${HRFLAIR},${HRT1},1,32,Regular,0.25 \] \
-            --transform Rigid\[ 0.1 \] \
+            --transform Rigid\[ 0.001 \] \
             --convergence \[ 1000x500x250x0,1e-6,10 \] \
             --smoothing-sigmas 3x2x1x0vox \
             --shrink-factors 8x4x2x1 \
@@ -63,7 +62,8 @@ do
             --masks \[ ${HRFLMASK},${HRT1MASK} \] \
             --float 0 \
             --verbose 0
-
+            #--initial-moving-transform \[ ${HRFLAIR},${HRT1},0 \] \
+    
             antsApplyTransforms --dimensionality 3 \
             --input ${HRT1} \
             --reference-image ${HRFLAIR} \
