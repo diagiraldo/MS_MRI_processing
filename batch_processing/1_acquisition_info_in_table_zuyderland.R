@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 
-# Read acquisition info in .json files
+# Read acquisition info in .json files and save a table with
+# all acqusition info.
 # Diana Giraldo, Nov 2023
 
 suppressMessages(library(dplyr))
@@ -12,6 +13,7 @@ args = commandArgs(trailingOnly=TRUE)
 # Directory with acquisition info files
 ACQ_DIR = args[1]
 # ACQ_DIR = "/mnt/extradata/MRI_Zuyderland/acquisition_info"
+# ACQ_DIR = "/mnt/extradata/MSPELT_2/remaining_acquisition_info"
 # Output
 out_file = args[2] 
 

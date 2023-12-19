@@ -10,7 +10,7 @@ MRIfile <- "/home/vlab/MS_proj/info_files/FLAIR_HRT1W_zuy_info.csv"
 # File with MRI info per session
 SESfile <- "/home/vlab/MS_proj/info_files/session_zuy_info.csv"
 
-# Read table with info extracted from DICOMSacquisition info
+# Read table with info extracted from DICOMS
 DF <- read.table(acqfile, sep = "\t", header = TRUE, colClasses = "character") %>%
   mutate(across(c(Slice.Thickness, Spacing.Between.Slices, 
                   Repetition.Time, Echo.Time, Inversion.Time,

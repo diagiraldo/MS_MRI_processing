@@ -70,6 +70,10 @@ do
 
             # convert to nifti
             mrconvert ${IN_DCM} ${TMP_DIR}/raw.nii.gz -config RealignTransform 0
+            ndim=$( mrinfo ${TMP_DIR}/raw.nii.gz -ndim )
+            if [ $ndim -gt 3 ]; then
+                mrconvert ${TMP_DIR}/raw.nii.gz -coord 3 0 -axes 0,1,2 ${TMP_DIR}/raw.nii.gz -config RealignTransform 0 -force
+            fi
 
             # Denoise 
             echo "   Denoising..."

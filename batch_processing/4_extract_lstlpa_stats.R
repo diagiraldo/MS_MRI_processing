@@ -2,19 +2,26 @@
 
 # Extract LST estimations of volume
 # Diana Giraldo, January 2023
+# Last update: Dec 2023
 
 library(dplyr)
 library(lubridate)
 
 # Inputs: 
+imgset <- "_2"
+
 # Directory with processed MRI
-PRO_DIR = "/home/vlab/MS_proj/processed_MRI"
+PRO_DIR = ifelse(imgset == "_2",
+                 "/home/vlab/MS_proj/MS_MRI_2",
+                 "/home/vlab/MS_proj/processed_MRI")
+
 #File with session info and MRI processing pipeline
-SESfile <- "/home/vlab/MS_proj/info_files/session_MRIproc_pipeline.csv"
+SESfile <- sprintf("/home/vlab/MS_proj/info_files/session_MRIproc_pipeline_%s.csv", imgset) 
 
 # Load session info
 DS <- read.csv(SESfile, header = TRUE, colClasses = "character") %>%
-  mutate(Date = as.Date(Date), t0 = as.Date(t0))
+  mutate(Date = as.Date(Date)) %>%
+  select(-t0, -Month)
 
 # Data frame with lesion stats from LST-lpa
 thLST <- 0.1
@@ -47,7 +54,7 @@ DVOL <- left_join(select(DS, Subject, Session, Date:proc_pipe), DVOL) %>%
 
 # Save info
 write.csv(DVOL, 
-          file = "/home/vlab/MS_proj/feature_tables/lstlpa_outputs.csv", 
+          file = sprintf("/home/vlab/MS_proj/feature_tables/lstlpa_outputs%s.csv", imgset), 
           row.names = FALSE)
 
 rm(DS, DVOL, PRO_DIR, SESfile)

@@ -7,14 +7,14 @@ library(jsonlite)
 library(dplyr)
 
 # Directory with (organized) images and acquisition info files
-MRI_DIR = "/home/vlab/MS_proj/MS_MRI"
-
-# Init data frame
-DF <- data.frame()
+MRI_DIR = "/home/vlab/MS_proj/MS_MRI_2"
 
 # List of cases/subjects
 sublist <- list.dirs(path = MRI_DIR, 
                      recursive = FALSE, full.names = FALSE)
+
+# Init data frame
+DF <- data.frame()
 
 # Loop over subjects
 for (subi in 1:length(sublist)) {
@@ -26,7 +26,7 @@ for (subi in 1:length(sublist)) {
   subdf <- data.frame()
   # Loop over sessions
   for (sesi in 1:length(sesslist)){
-    sescode <- gsub("ses-", "", sesslist[sesi])
+    sesscode <- gsub("ses-", "", sesslist[sesi])
     fullsesdir <- paste(fullsubdir, sesslist[sesi], sep = "/")
     fullimgdir <- paste(fullsesdir, "anat", sep = "/")
     filelist <- list.files(path = fullimgdir, pattern = "\\.json$")
@@ -36,11 +36,13 @@ for (subi in 1:length(sublist)) {
     for (imgi in 1:length(filelist)){
       filebn <- gsub(".json", "", filelist[imgi])
       injson <- paste(fullimgdir, filelist[imgi], sep = "/")
-      tmp <- as.data.frame(fromJSON(injson, flatten = TRUE)) %>%
+      tmp <- fromJSON(injson, flatten = TRUE)
+      tmp <- lapply(tmp, function(x) ifelse(is.null(x), "", x))
+      tmp <- as.data.frame(tmp) %>%
         mutate(Subject = subcode,
-               Session = sescode,
-               File.basename = filebn) %>%
-        select(Subject, Session, File.basename, everything())
+               Session = sesscode,
+               InfoName = filebn) %>%
+        select(Subject, Session, InfoName, everything())
       names(tmp) <- make.names(names(tmp))
       sessdf <- bind_rows(sessdf, tmp)
       rm(tmp)

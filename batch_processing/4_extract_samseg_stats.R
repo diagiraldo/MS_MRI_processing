@@ -2,19 +2,26 @@
 
 # Extract SAMSEG stats per MRI processing protocol
 # Diana Giraldo, Dec 2022
+# Last update: Dec 2023
 
 library(dplyr)
 library(lubridate)
 
 # Inputs: 
+imgset <- "_2"
+
 # Directory with processed MRI
-PRO_DIR = "/home/vlab/MS_proj/processed_MRI"
+PRO_DIR = ifelse(imgset == "_2",
+                 "/home/vlab/MS_proj/MS_MRI_2",
+                 "/home/vlab/MS_proj/processed_MRI")
+
 #File with session info and MRI processing pipeline
-SESfile <- "/home/vlab/MS_proj/info_files/session_MRIproc_pipeline.csv"
+SESfile <- sprintf("/home/vlab/MS_proj/info_files/session_MRIproc_pipeline_%s.csv", imgset) 
 
 # Load session info
 DS <- read.csv(SESfile, header = TRUE, colClasses = "character") %>%
-  mutate(Date = as.Date(Date), t0 = as.Date(t0))
+  mutate(Date = as.Date(Date)) %>%
+  select(-t0, -Month)
 
 # Data frame with volume estimations from SAMSEG
 DVOL <- data.frame()
@@ -42,7 +49,7 @@ for (pp in c("CsT1", "C", "B", "A")) {
         select(Subject, Session, everything()) %>%
         mutate(samseg.Unknowns = count_unknowns)
       DVOL <- bind_rows(DVOL, tmpdf)
-      rm(segvols, tiv, tmpvols,  tmpdf, inssfile, intivfile)
+      rm(segvols, tiv, tmpvols,  tmpdf, inssfile, intivfile, inunkfile, count_unknowns)
     }
   }
 }
@@ -68,7 +75,7 @@ DVOL <- DVOL %>%
 
 # Save info
 write.csv(DVOL, 
-          file = "/home/vlab/MS_proj/feature_tables/samseg_outputs.csv", 
+          file = sprintf("/home/vlab/MS_proj/feature_tables/samseg_outputs%s.csv", imgset), 
           row.names = FALSE)
 
 rm(DS, DVOL, PRO_DIR, SESfile)
