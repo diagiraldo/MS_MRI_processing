@@ -61,11 +61,16 @@ batchTimeViz(batchvar='MRIpipeline',
 #################################
 # make batch boxplot for selected feature, do not adjust for batch 
 sel_feat = vol_feat[1]
+
+fixed_effects = 'Month'
+random_effects = '(1|ID)'
+batch_variable = 'MRIpipeline'
+
 batchBoxplot(idvar='ID', 
-             batchvar='MRIpipeline', 
+             batchvar=batch_variable, 
              feature=sel_feat, 
-             formula='Month',
-             ranef='(1|ID)',
+             formula=fixed_effects,
+             ranef=random_effects,
              data=DF,
              colors=1:4)
 
@@ -73,14 +78,28 @@ batchBoxplot(idvar='ID',
 # order by increasing batch variance
 # (centers boxplot means on the zero line)
 batchBoxplot(idvar='ID', 
-             batchvar='MRIpipeline', 
+             batchvar=batch_variable, 
              feature=sel_feat, 
-             formula='Month',
-             ranef='(1|ID)',
+             formula=fixed_effects,
+             ranef=random_effects,
              data=DF,
              adjustBatch=TRUE,
              orderby='var',
              colors=1:4)
+
+# fit linear mixed effect model
+# # without batch
+# lme_formula <- as.formula(paste0(sel_feat, '~', fixed_effects, '+' , random_effects))
+
+# with batch
+lme_formula <- as.formula(paste0(sel_feat, '~', fixed_effects, '+' , batch_variable, '+', random_effects))
+
+lme_fit <- lme4::lmer(lme_formula, data=DF, REML=TRUE, control=lme4::lmerControl(optimizer='bobyqa'))
+
+# residuals
+fit_residuals <- data.frame(residuals=residuals(lme_fit), batch=DF[,batch_variable])
+fit_residuals_means <- aggregate(fit_residuals$residuals, by=list(fit_residuals$batch), FUN=mean)
+fit_residuals_var <- aggregate(fit_residuals$residuals, by=list(fit_residuals$batch), FUN=var)
 
 #################################
 # trajPlot() -- visualize trajectories
@@ -166,18 +185,44 @@ batchBoxplot(idvar='ID',
 #################################
 # longCombat() -- apply longitudinal ComBat
 #################################
+fixed_effects = 'Month'
+random_effects = '(1|ID)'
+batch_variable = 'MRIpipeline'
+
 DF_combat <- longCombat(idvar='ID', 
                         timevar='Month',
-                        batchvar='MRIpipeline',  
+                        batchvar=batch_variable,  
                         features=vol_feat, 
-                        formula='Month',
-                        ranef='(1|ID)',
+                        formula=fixed_effects,
+                        ranef=random_effects,
                         data=DF)
 
 DF_harmon <- DF_combat$data_combat
 vol_feat_combat <- paste(vol_feat, "combat", sep = ".")
 DF <- merge(DF, DF_harmon)
 
+###############################################################################
+# longCombat() -- Step-by-step
+
+batch <- droplevels(as.factor(DF[[batch_variable]]))
+# number of batches
+m <- nlevels(batch)
+# row IDs for each batch 
+batches <- lapply(levels(batch), function(x) which(batch==x))
+# number of observations for each batch
+ni <- sapply(batches, length)
+
+featurenames <- vol_feat
+# number of features
+V <- length(featurenames)
+
+# total number of observations
+L <- nrow(DF)
+
+###############################################################################
+
+
+###############################################################################
 # plot distributions
 X <- DF %>%
 melt(measure.vars = vol_feat_combat)

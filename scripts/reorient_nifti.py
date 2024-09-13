@@ -53,8 +53,10 @@ def main(args=None):
     or_ref2in = nib.orientations.ornt_transform(ref_ori, im_ori)
     
     # Affine transform from input to reference
-    aff_in2ref = nib.orientations.inv_ornt_aff(or_ref2in,
-                                               np.array(REF.shape).astype(np.int32))
+    aff_in2ref = nib.orientations.inv_ornt_aff(
+        or_ref2in,
+        np.array(REF.shape).astype(np.int32)
+    )
     or_in2ref = nib.orientations.io_orientation(aff_in2ref)
     
     # Apply reorientation
