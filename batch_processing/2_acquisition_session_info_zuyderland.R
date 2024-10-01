@@ -114,6 +114,21 @@ for (pp in c("LR_FLAIR", "HR_FLAIR")){
               row.names = FALSE, col.names = FALSE, quote = FALSE)
 }
 
+##### No procesessed yet, to be processed with prettier
+pp <- "no_proc"
+
+SI <- filter(DF, grepl(pp, proc_pipe)) %>%
+  filter(!is.na(FLAIR.ACQ)) %>%
+  mutate(Sess.str = paste(Subject, Session, FolderName, pred.Img.Contrast))
+outfile <- sprintf("/home/vlab/MS_proj/info_files/imgs_zuy_proc_%s.txt", pp)
+write.table(SI$Sess.str, file = outfile, row.names = FALSE, col.names = FALSE, quote = FALSE)  
+
+tmpD <- filter(DS, grepl(pp, proc_pipe)) %>%
+  mutate(Sess.str = paste(Subject, Session))
+write.table(tmpD$Sess.str, 
+            file = sprintf("/home/vlab/MS_proj/info_files/sessions_zuy_proc_%s.txt", pp), 
+            row.names = FALSE, col.names = FALSE, quote = FALSE)
+
 # Plot histograms for session info
 library(ggplot2)
 

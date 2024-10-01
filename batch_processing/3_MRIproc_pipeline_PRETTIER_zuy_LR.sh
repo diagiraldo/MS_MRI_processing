@@ -23,6 +23,8 @@ PRO_DIR=/home/vlab/MS_proj
 
 for SR_DIR in $(ls -d ${SERVDIR}/sub*/*/anat/LR_FLAIR_prettier);
 do
+    echo "--------------------------------------------------------"
+    echo "${SR_DIR}"
 
     SESF=$(dirname $(dirname ${SR_DIR}))
     SESFN=$(basename ${SESF})
@@ -33,9 +35,10 @@ do
     if [[ ${n_IM} -lt 2 ]];
     then
         echo "less than 2 images"
-        continue
+        #continue
     else
         echo "2 or more images in ${SR_DIR}"
+        #continue
     fi
 
     # Find HR grid
@@ -47,41 +50,46 @@ do
 
     if [[ ! -f ${IMDIR}/HR_FLAIR_combined_prettierEDSR.nii.gz ]]; then
 
-        # Make brain masks for PRETTIER outputs
-        mkdir -p ${IMDIR}/LR_FLAIR_prettier_masks
-        for IM in $(ls ${SR_DIR}/*.nii.gz);
-        do
-            IM_BN=$(basename ${IM} | sed 's/.nii.gz//')
-            hd-bet -i ${IM} -o ${IMDIR}/LR_FLAIR_prettier_masks/${IM_BN}_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
-            rm ${IMDIR}/LR_FLAIR_prettier_masks/${IM_BN}_bet.nii.gz
-            mv ${IMDIR}/LR_FLAIR_prettier_masks/${IM_BN}_bet_mask.nii.gz ${IMDIR}/LR_FLAIR_prettier_masks/${IM_BN}_brainmask.nii.gz
-        done
+         
+        if [[ ${n_IM} -ge 2 ]];
+        then
+            # Make brain masks for PRETTIER outputs
+            mkdir -p ${IMDIR}/LR_FLAIR_prettier_masks
+            for IM in $(ls ${SR_DIR}/*.nii.gz);
+            do
+                IM_BN=$(basename ${IM} | sed 's/.nii.gz//')
+                hd-bet -i ${IM} -o ${IMDIR}/LR_FLAIR_prettier_masks/${IM_BN}_bet.nii.gz -device cpu -mode fast -tta 0 #> /dev/null
+                rm ${IMDIR}/LR_FLAIR_prettier_masks/${IM_BN}_bet.nii.gz
+                mv ${IMDIR}/LR_FLAIR_prettier_masks/${IM_BN}_bet_mask.nii.gz ${IMDIR}/LR_FLAIR_prettier_masks/${IM_BN}_brainmask.nii.gz
+            done
 
-        # Align and combine PRETTIER outputs
-        ${MYTK_DIR}/align_combine_mrtrix3.py $(ls ${SR_DIR}/*.nii.gz) ${HR_grid} ${IMDIR}/HR_FLAIR_combined_prettierEDSR.nii.gz -masks $(ls ${IMDIR}/LR_FLAIR_prettier_masks/*.nii.gz) -iter 2 -force
+            # Align and combine PRETTIER outputs
+            ${MYTK_DIR}/align_combine_mrtrix3.py $(ls ${SR_DIR}/*.nii.gz) ${HR_grid} ${IMDIR}/HR_FLAIR_combined_prettierEDSR.nii.gz -masks $(ls ${IMDIR}/LR_FLAIR_prettier_masks/*.nii.gz) -iter 2 -force
 
-        # Clean
-        rm -r ${IMDIR}/LR_FLAIR_prettier_masks
+            # Clean
+            rm -r ${IMDIR}/LR_FLAIR_prettier_masks
+
+        else
+            rm ${IMDIR}/HR_FLAIR_prettierEDSR_brainmask.nii.gz 
+            IM=$(ls ${SR_DIR}/*.nii.gz | head -n 1)
+            mrgrid ${IM} regrid ${IMDIR}/HR_FLAIR_combined_prettierEDSR.nii.gz -template ${HR_grid} -force
+        fi
+
 
     else
         echo "${IMDIR}/HR_FLAIR_combined_prettierEDSR.nii.gz already exists"
-        echo ""
+        #echo ""
     fi
 
     # Prepare for segmentation
     HRFLAIR=${IMDIR}/HR_FLAIR_combined_prettierEDSR.nii.gz
-    HRFLMASK=${IMDIR}/HR_FLAIR_prettierEDSR_brainmask.nii.gz 
-
-    if [[ ! -f ${HRFLMASK} ]]; then
-        hd-bet -i ${HRFLAIR} -o ${IMDIR}/HR_FLAIR_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
-        rm ${IMDIR}/HR_FLAIR_bet.nii.gz
-        mv ${IMDIR}/HR_FLAIR_bet_mask.nii.gz ${HRFLMASK}
-    fi
-
+    
     if [[ ! -f ${IMDIR}/prettier_LST/ples_lpa.nii.gz || ! -f ${IMDIR}/prettier_samseg/seg.mgz ]]; then
+        #${MYTK_DIR}/reorient_RAS.py --input ${HRFLAIR} --output ${HRFLAIR}
         epsilon=0.01    
         FLAIR_IM=${IMDIR}/HR_FLAIR_seginput.nii.gz
-        mrcalc ${HRFLAIR} 0 ${epsilon} -replace ${FLAIR_IM} -force -quiet
+        mrcalc ${HRFLAIR} ${epsilon} -le ${epsilon} ${HRFLAIR} -if ${FLAIR_IM} -force -quiet
+        #${MYTK_DIR}/reorient_RAS.py --input ${FLAIR_IM} --output ${FLAIR_IM}
     else
         echo "Segmentations with prettier MRI already exist"
         continue
@@ -103,8 +111,16 @@ do
 
     else
         echo "LST segmentation with prettier MRI already exists"
-        echo ""
+        #echo ""
 
+    fi
+
+    HRFLMASK=${IMDIR}/HR_FLAIR_prettierEDSR_brainmask.nii.gz
+
+    if [[ ! -f ${HRFLMASK} ]]; then
+        hd-bet -i ${HRFLAIR} -o ${IMDIR}/HR_FLAIR_bet.nii.gz -device cpu -mode fast -tta 0 > /dev/null
+        rm ${IMDIR}/HR_FLAIR_bet.nii.gz
+        mv ${IMDIR}/HR_FLAIR_bet_mask.nii.gz ${HRFLMASK}
     fi
 
     # SAMSEG segmentation
@@ -125,7 +141,7 @@ do
 
     else
         echo "Samseg segmentation with prettier MRI already exists"
-        echo ""
+        #echo ""
 
     fi 
 

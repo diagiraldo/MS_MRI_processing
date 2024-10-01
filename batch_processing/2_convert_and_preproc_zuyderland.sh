@@ -14,8 +14,8 @@ PRO_DIR=/home/vlab/MS_proj/processed_MRI_zuy
 #IMG_LIST=/home/vlab/MS_proj/info_files/imgs_zuy_proc_HR_FLAIR.txt 
 #IMG_LIST=/home/vlab/MS_proj/info_files/imgs_zuy_proc_LR_FLAIR.txt  
 #IMG_LIST=/home/vlab/MS_proj/info_files/imgs_zuy_proc_LR_FLAIR_and_HR_T1W.txt
-IMG_LIST=/home/vlab/MS_proj/info_files/imgs_zuy_proc_HR_FLAIR_and_HR_T1W.txt
-
+#IMG_LIST=/home/vlab/MS_proj/info_files/imgs_zuy_proc_HR_FLAIR_and_HR_T1W.txt
+IMG_LIST=/home/vlab/MS_proj/info_files/imgs_zuy_proc_no_proc.txt 
 
 while IFS= read -r line;
 do
