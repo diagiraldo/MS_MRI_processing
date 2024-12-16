@@ -48,8 +48,7 @@ do
                 IM_TYPE=anat
             fi
             if $(echo ${IM_DESCR} | grep -q -E "DWI"); then
-                IM_TYPE=dwi            # remove tmp dir 
-            rm -r ${TMP_DIR}
+                IM_TYPE=dwi            
             fi
             #echo "  Image type: ${IM_TYPE}"
 
